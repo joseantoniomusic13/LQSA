@@ -1466,6 +1466,59 @@ async function adminResetAllStats() {
   }
 }
 
+// Resetear las monedas a 0 de TODOS los vecinos registrados
+async function adminResetAllCoins() {
+  const confirmFirst = confirm("⚠️ ¿ESTÁS COMPLETAMENTE SEGURO DE ESTO?\n\nEsta acción reseteará a 0 las monedas de TODOS los vecinos registrados. ¡Esto no se puede deshacer!");
+  if (!confirmFirst) return;
+
+  const confirmSecond = prompt("Para confirmar la eliminación masiva de monedas, escribe la palabra RESET en mayúsculas:");
+  if (confirmSecond !== "RESET") {
+    if (window.showLqsaAlert) {
+      showLqsaAlert("Confirmación incorrecta. No se han modificado las monedas.", "OPERACIÓN CANCELADA", "error");
+    } else {
+      alert("Confirmación incorrecta. Operación cancelada.");
+    }
+    return;
+  }
+
+  try {
+    const db = firebase.database();
+
+    // Obtener todos los usuarios registrados
+    const snap = await db.ref("users").once("value");
+    if (!snap.exists()) {
+      if (window.showLqsaAlert) showLqsaAlert("No se encontraron vecinos registrados.", "SIN USUARIOS", "error");
+      else alert("No se encontraron vecinos.");
+      return;
+    }
+
+    const users = snap.val();
+    const updates = {};
+
+    // Preparar el reset masivo de monedas en Firebase
+    for (const key of Object.keys(users)) {
+      if (key === "admin" || users[key].username === "admin") continue;
+      updates[`users/${key}/coins`] = 0;
+    }
+
+    await db.ref().update(updates);
+
+    if (window.showLqsaAlert) {
+      showLqsaAlert("Se han puesto a 0 las monedas de todos los vecinos correctamente.", "MONEDAS RESETEADAS 🎉", "success");
+    } else {
+      alert("✅ ¡Monedas de todos los vecinos reseteadas a 0 con éxito!");
+    }
+
+    // Recargar la interfaz
+    if (typeof loadAdminDashboardData === "function") {
+      loadAdminDashboardData();
+    }
+  } catch (error) {
+    console.error("Error en reset masivo de monedas:", error);
+    alert("Error al realizar el reset de monedas: " + error.message);
+  }
+}
+
 // ─── GESTIÓN AVANZADA DE CROMOS DE JUGADORES (ADMIN) ───────────────────
 async function adminManagePlayerCards(userKey, username) {
   const existing = document.getElementById("admin-manage-cards-modal");
@@ -2037,6 +2090,10 @@ async function renderAdminDashboardPage() {
             <div style="display:flex; gap:10px;">
               <button onclick="adminRainCoins(100)" class="q-btn" style="flex:1; background:rgba(240,192,32,0.15); border:1px solid var(--accent); color:var(--accent); font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border-radius:6px; cursor:pointer;">🪙 Regalar 100</button>
               <button onclick="adminRainCoins(500)" class="q-btn" style="flex:1; background:rgba(240,192,32,0.25); border:2px solid var(--accent); color:#fff; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border-radius:6px; cursor:pointer;">🪙 Regalar 500</button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+              <button onclick="adminResetAllCoins()" class="q-btn" style="width:100%; background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border-radius:6px; cursor:pointer; text-transform:uppercase; transition:all 0.2s;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff';" onmouseout="this.style.background='rgba(239,68,68,0.12)'; this.style.color='#ef4444';">🔄 Resetear Monedas de Todos</button>
             </div>
           </div>
         </div>

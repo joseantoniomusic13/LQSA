@@ -3144,26 +3144,46 @@ function openCardDuelLobby() {
 function renderCardDuelLobbyHtml(overlay, ownedCards) {
   const uid = localStorage.getItem('lqsa_user');
 
-  // Lista de cromos del inventario
-  const inventoryHtml = ownedCards.map(card => {
-    const userCard = userAlbumData.cards[card.id] || { level: 1, signed: false };
-    const level = userCard.level || 1;
-    const signed = !!userCard.signed;
-    const inDeck = localCardDuelDeck.includes(card.id);
+  // Agrupar cromos del inventario por tipo principal
+  const grouped = {
+    "Mayorista": [],
+    "León": [],
+    "Junta": [],
+    "Inquilino": [],
+    "Buscavidas": []
+  };
+
+  ownedCards.forEach(card => {
     const rawType = card.combatType || "Inquilino";
     const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
-    let lType = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES) ? (LQSA_TYPES[rawType] || LQSA_TYPES[primaryType] || LQSA_TYPES["Inquilino"]) : null;
-    if (!lType) {
-      lType = { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
-    }
+    const groupKey = grouped[primaryType] ? primaryType : "Inquilino";
+    grouped[groupKey].push(card);
+  });
 
-    return `
-            <div class="workshop-card-item" style="border:1px solid ${inDeck ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.06)'}; background:${inDeck ? 'rgba(220,38,38,0.04)' : 'rgba(255,255,255,0.02)'}; padding: 10px;">
+  const groupedHtml = Object.keys(grouped).map(typeKey => {
+    const cards = grouped[typeKey];
+    if (cards.length === 0) return "";
+    const lType = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES && LQSA_TYPES[typeKey]) ? LQSA_TYPES[typeKey] : { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
+
+    const cardsHtml = cards.map(card => {
+      const userCard = userAlbumData.cards[card.id] || { level: 1, signed: false };
+      const level = userCard.level || 1;
+      const signed = !!userCard.signed;
+      const inDeck = localCardDuelDeck.includes(card.id);
+      const rawType = card.combatType || "Inquilino";
+      const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
+      let lTypeCard = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES) ? (LQSA_TYPES[rawType] || LQSA_TYPES[primaryType] || LQSA_TYPES["Inquilino"]) : null;
+      if (!lTypeCard) {
+        lTypeCard = { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
+      }
+
+      return `
+            <div class="workshop-card-item" style="border:1px solid ${inDeck ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.06)'}; background:${inDeck ? 'rgba(220,38,38,0.04)' : 'rgba(255,255,255,0.02)'}; padding: 10px; margin-bottom: 6px; border-radius:10px;">
                 <img class="workshop-card-thumb" src="${card.image}" style="width:45px; height:60px; object-fit:cover; border-radius:6px;" onerror="this.src='img/personajes/amador-rivas.webp'">
                 <div class="workshop-card-details" style="text-align:left;">
                     <h4 class="workshop-card-title" style="font-size:0.95rem; margin:0 0 2px 0;">${card.name}</h4>
                     <p class="workshop-card-meta" style="font-size:0.75rem; color:#94a3b8; margin:0 0 4px 0;">
-                        <span style="color:${lType.color}; font-weight:bold;">${lType.icon} ${lType.element || 'Planta'} - ${card.combatType || 'Inquilino'}</span> | ${'★'.repeat(level)}${'☆'.repeat(5 - level)}
+                        <span style="color:${lTypeCard.color}; font-weight:bold;">${lTypeCard.icon} ${lTypeCard.element || 'Planta'} - ${card.combatType || 'Inquilino'}</span> | ${'★'.repeat(level)}${'☆'.repeat(5 - level)}
                     </p>
                     <div style="font-size:0.72rem; color:#ffd700; font-weight:bold;">❤️ HP Base: ${card.hp} | ⚔️ ATK Base: ${card.atk}</div>
                 </div>
@@ -3172,6 +3192,19 @@ function renderCardDuelLobbyHtml(overlay, ownedCards) {
                 </button>
             </div>
         `;
+    }).join("");
+
+    return `
+      <div style="margin-bottom: 12px; text-align: left;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; font-weight: bold; font-family:'Barlow Condensed',sans-serif; color:${lType.color}; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom: 8px; text-transform:uppercase;">
+          <span>${lType.icon} ${lType.label || typeKey}</span>
+          <span style="margin-left:auto; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px; color:#cbd5e1;">${cards.length} cromos</span>
+        </div>
+        <div>
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
   }).join("");
 
   overlay.innerHTML = `
@@ -3194,7 +3227,7 @@ function renderCardDuelLobbyHtml(overlay, ownedCards) {
              <div class="workshop-grid" style="grid-template-columns:1fr; gap:6px; overflow-y:visible;">
                 ${ownedCards.length === 0 ? `
                    <p style="color:#94a3b8; font-size:0.88rem; text-align:center; padding:30px;">Aún no tienes cromos en tu colección. ¡Abre sobres en la Tienda para empezar!</p>
-                ` : inventoryHtml}
+                ` : groupedHtml}
              </div>
           </div>
 
@@ -3691,10 +3724,23 @@ function renderCardBattleScreen(room) {
   const benchHtml = me.deck.map((card, idx) => {
     if (idx === myActiveIdx) return '';
     const alive = card.hp > 0;
+
+    // Calcular tipo del cromo del banquillo
+    const bRawType = card.combatType || "Inquilino";
+    const bPrimary = bRawType.includes(" + ") ? bRawType.split(" + ")[0] : bRawType;
+    let bType = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES) ? (LQSA_TYPES[bRawType] || LQSA_TYPES[bPrimary] || LQSA_TYPES["Inquilino"]) : null;
+    if (!bType) {
+      bType = { icon: "🏠", color: "#4ade80", element: "Planta" };
+    }
+
     return `
-            <div class="bench-item ${alive ? '' : 'defeated'}" onclick="${alive && isMyTurn ? `switchCardDuelActive('${room.code}', ${idx})` : ''}" style="border: 1px solid ${alive ? 'rgba(255,255,255,0.1)' : '#ef4444'}; opacity:${alive ? 1 : 0.4}; cursor:${alive && isMyTurn ? 'pointer' : 'not-allowed'}; padding:4px; border-radius:6px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.65rem; width:45px; position:relative;">
+            <div class="bench-item ${alive ? '' : 'defeated'}" onclick="${alive && isMyTurn ? `switchCardDuelActive('${room.code}', ${idx})` : ''}" style="border: 1px solid ${alive ? 'rgba(255,255,255,0.1)' : '#ef4444'}; opacity:${alive ? 1 : 0.4}; cursor:${alive && isMyTurn ? 'pointer' : 'not-allowed'}; padding:4px; border-radius:6px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.65rem; width:45px; position:relative;" title="${card.name} (${bRawType})">
                 <img src="${card.image}" style="width:30px; height:40px; object-fit:cover; border-radius:3px;">
-                <div style="font-weight:bold; color:#f87171;">${card.hp}/${card.maxHp}</div>
+                <div style="font-weight:bold; color:#f87171; font-size:0.58rem;">${card.hp}/${card.maxHp}</div>
+                <div style="font-size:0.58rem; color:${bType.color}; font-weight:bold; letter-spacing:-0.2px; display:flex; align-items:center; gap:1px; line-height:1;">
+                  <span>${bType.icon}</span>
+                  <span style="font-size:0.5rem; text-transform:uppercase;">${bType.element.substring(0, 3)}</span>
+                </div>
                 ${!alive ? '<div style="position:absolute; inset:0; background:rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:0.75rem; border-radius:6px;">💀</div>' : ''}
             </div>
         `;
