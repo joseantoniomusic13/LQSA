@@ -413,6 +413,10 @@ function applyFilters() {
             const owned = !!userAlbumData.cards[card.id];
             if (activeStatusFilter === "owned" && !owned) return false;
             if (activeStatusFilter === "locked" && owned) return false;
+            if (activeStatusFilter === "duplicates") {
+                const count = owned ? userAlbumData.cards[card.id].count : 0;
+                if (count <= 1) return false;
+            }
         }
         
         return true;
@@ -459,7 +463,7 @@ function renderPocketHtml(cardIndex) {
     if (isFoil) rarityName = "🌈 FOIL";
 
     return `
-        <div class="album-pocket pocket-filled ${isFoil ? 'card-foil' : ''}" data-id="${card.id}" style="--rarity-color: ${borderCol};">
+        <div class="album-pocket pocket-filled ${isFoil ? 'card-foil' : ''}" data-id="${card.id}" style="--rarity-color: ${borderCol}; cursor: pointer;" onclick="zoomCard('${card.id}', ${isFoil})">
             <div class="pocket-glare"></div>
             <div class="tcg-card" style="border: 2px solid ${borderCol};">
                 <div class="card-rarity-badge" style="background: ${isFoil ? 'linear-gradient(45deg, #f43f5e, #3b82f6, #10b981)' : card.baseRarity.color}; color: ${isFoil ? '#fff' : '#000'};">${rarityName}</div>
@@ -476,6 +480,172 @@ function renderPocketHtml(cardIndex) {
             </div>
         </div>
     `;
+}
+
+function zoomCard(cardId, isFoil = false) {
+    const card = ALBUM_CARDS.find(c => c.id === cardId);
+    if (!card) return;
+
+    const userCard = userAlbumData.cards[card.id];
+    const count = userCard ? userCard.count : 0;
+    const rarity = card.baseRarity || CARD_RARITIES.COMMON;
+    const borderCol = isFoil ? CARD_RARITIES.FOIL.color : rarity.color;
+    const rarityName = isFoil ? "🌈 Holográfica Foil" : rarity.name;
+    const rarityClass = isFoil ? "rarity-design-foil" : `rarity-design-${rarity.id}`;
+
+    // Create modal overlay
+    const modal = document.createElement("div");
+    modal.id = "zoom-card-modal";
+    modal.style.position = "fixed";
+    modal.style.inset = "0";
+    modal.style.zIndex = "10000";
+    modal.style.background = "rgba(4, 3, 10, 0.94)";
+    modal.style.backdropFilter = "blur(18px)";
+    modal.style.display = "flex";
+    modal.style.flexDirection = "column";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.style.gap = "24px";
+    modal.style.animation = "fadeInZoom 0.25s ease-out";
+    
+    // Close on clicking the backdrop itself
+    modal.onclick = function(e) {
+        if (e.target.id === "zoom-card-modal") {
+            modal.remove();
+        }
+    };
+
+    modal.innerHTML = `
+      <style>
+        @keyframes fadeInZoom { from { opacity: 0; } to { opacity: 1; } }
+        .zoomed-card-container {
+          width: 340px;
+          height: 476px;
+          perspective: 1500px;
+          cursor: pointer;
+          transform-style: preserve-3d;
+        }
+        .zoomed-card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transform-style: preserve-3d;
+          transform: rotateY(180deg);
+          box-shadow: 0 30px 75px rgba(0,0,0,0.9);
+          border-radius: 20px;
+        }
+        .zoomed-card-front {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #0f0a21;
+          box-sizing: border-box;
+          transform: rotateY(180deg);
+          display: flex;
+          flex-direction: column;
+        }
+        .zoomed-card-front.rarity-design-common { border: 6px solid var(--rarity-common); }
+        .zoomed-card-front.rarity-design-rare { border: 6px solid var(--rarity-rare); box-shadow: 0 0 30px rgba(59,130,246,0.3); }
+        .zoomed-card-front.rarity-design-epic { border: 6px solid var(--rarity-epic); animation: epicGlow 4s ease infinite; }
+        .zoomed-card-front.rarity-design-legendary { border: 6px solid var(--rarity-legendary); animation: legendaryGlow 3s ease infinite; }
+        .zoomed-card-front.rarity-design-foil {
+          border: 6px solid transparent;
+          border-image: linear-gradient(45deg, #f43f5e, #eab308, #3b82f6, #f43f5e) 1;
+          box-shadow: 0 0 35px rgba(244,63,94,0.7);
+        }
+        .close-zoom-btn {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.12);
+          color: #94a3b8;
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 1.25rem;
+          letter-spacing: 1.5px;
+          padding: 8px 36px;
+          border-radius: 50px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .close-zoom-btn:hover {
+          background: #ef4444;
+          color: #fff;
+          border-color: #ef4444;
+          box-shadow: 0 0 15px rgba(239,68,68,0.4);
+          transform: translateY(-2px);
+        }
+      </style>
+
+      <div class="zoomed-card-container" id="zoomed-card-container">
+        <div class="zoomed-card-inner" id="zoomed-card-inner">
+          <div class="zoomed-card-front lqsa-card-item ${rarityClass} ${isFoil ? 'is-foil' : ''} ${rarity.id === 'legendary' ? 'is-legendary' : ''}">
+            <div class="card-foil-overlay"></div>
+            <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
+              ${rarityName}
+            </div>
+            <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+            
+            <div class="card-info-box" style="padding: 16px 20px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.96);">
+              <div style="text-align: left;">
+                <div class="card-name" style="font-size: 1.5rem; margin-bottom: 3px; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700;">${card.name}</div>
+                <div class="card-job" style="font-size: 0.95rem; color: #ffd700; margin-bottom: 8px; font-family:'Barlow Condensed', sans-serif;">💼 Ocupación: ${card.occupation}</div>
+                <div class="card-quote" style="font-size: 0.9rem; color: #94a3b8; font-style: italic; line-height: 1.4; max-height: 58px; overflow-y: auto;">
+                  "${card.quote}"
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 4px;">
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: bold;">T. Aparición: ${card.season}</span>
+                <span class="card-id-num" style="font-size: 0.78rem; color: #94a3b8; font-family: monospace;">Nº #${card.number}/150</span>
+              </div>
+            </div>
+            ${count > 1 ? `<div class="card-counter" style="position:absolute; top: 12px; right: 12px; font-size:1.1rem; padding: 4px 10px; border-radius: 8px; z-index: 10;">×${count}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <button class="close-zoom-btn" onclick="document.getElementById('zoom-card-modal').remove()">
+        ✕ Cerrar Vista
+      </button>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Initialize 3D Parallax Tilt Effect for the Enlarged Card!
+    const container = document.getElementById("zoomed-card-container");
+    const inner = document.getElementById("zoomed-card-inner");
+    if (container && inner) {
+        container.onmousemove = function(e) {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+
+            const rotateY = (x / (rect.width / 2)) * 18;
+            const rotateX = -(y / (rect.height / 2)) * 18;
+
+            inner.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+            inner.style.transition = "none";
+
+            const foilOverlay = container.querySelector(".card-foil-overlay");
+            if (foilOverlay) {
+                const px = 50 + (x / (rect.width / 2)) * 25;
+                const py = 50 + (y / (rect.height / 2)) * 25;
+                foilOverlay.style.setProperty("--foil-x", `${px}%`);
+                foilOverlay.style.setProperty("--foil-y", `${py}%`);
+            }
+        };
+
+        container.onmouseleave = function() {
+            inner.style.transition = "transform 0.4s ease-out";
+            inner.style.transform = "rotateY(180deg) rotateX(0deg)";
+            
+            const foilOverlay = container.querySelector(".card-foil-overlay");
+            if (foilOverlay) {
+                foilOverlay.style.setProperty("--foil-x", `50%`);
+                foilOverlay.style.setProperty("--foil-y", `50%`);
+            }
+        };
+    }
 }
 
 function onPrevArrowClick() {
@@ -765,6 +935,7 @@ function openAlbumUI() {
             <div class="status-filters">
               <button class="status-filter-btn active" data-status="all" onclick="onAlbumStatusFilter('all')">Todos</button>
               <button class="status-filter-btn" data-status="owned" onclick="onAlbumStatusFilter('owned')">Obtenidos</button>
+              <button class="status-filter-btn" data-status="duplicates" onclick="onAlbumStatusFilter('duplicates')">🔄 Repetidos</button>
               <button class="status-filter-btn" data-status="locked" onclick="onAlbumStatusFilter('locked')">Bloqueados</button>
             </div>
           </div>
@@ -1123,6 +1294,9 @@ function loadOpeningCard(index) {
 
     document.getElementById("reveal-card-instruction").style.display = "block";
     document.getElementById("reveal-next-btn").style.display = "none";
+    
+    // Inicializar parallax para permitir que la carta boca abajo también se incline suavemente
+    initCardParallaxEffect();
 }
 
 function flipCurrentOpeningCard() {
@@ -1170,8 +1344,7 @@ function initCardParallaxEffect() {
     if (!cardEl || !innerEl) return;
 
     cardEl.onmousemove = function(e) {
-        if (!cardEl.classList.contains("revealed")) return;
-
+        const isRevealed = cardEl.classList.contains("revealed");
         const rect = cardEl.getBoundingClientRect();
         // Obtener desplazamiento del cursor respecto al centro de la carta
         const x = e.clientX - rect.left - rect.width / 2;
@@ -1181,8 +1354,13 @@ function initCardParallaxEffect() {
         const rotateY = (x / (rect.width / 2)) * 18;
         const rotateX = -(y / (rect.height / 2)) * 18;
 
-        // Sumar 180deg al eje Y porque la cara delantera está invertida
-        innerEl.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+        if (isRevealed) {
+            // Sumar 180deg al eje Y porque la cara delantera está invertida
+            innerEl.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+        } else {
+            // Rotación normal para la cara trasera
+            innerEl.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+        }
         innerEl.style.transition = "none";
 
         // Mover el brillo foil metalizado
@@ -1196,9 +1374,13 @@ function initCardParallaxEffect() {
     };
 
     cardEl.onmouseleave = function() {
-        // Volver de forma suave al estado neutro descubierto
         innerEl.style.transition = "transform 0.5s ease-out";
-        innerEl.style.transform = "rotateY(180deg) rotateX(0deg)";
+        const isRevealed = cardEl.classList.contains("revealed");
+        if (isRevealed) {
+            innerEl.style.transform = "rotateY(180deg) rotateX(0deg)";
+        } else {
+            innerEl.style.transform = "rotateY(0deg) rotateX(0deg)";
+        }
         
         const foilOverlay = cardEl.querySelector(".card-foil-overlay");
         if (foilOverlay) {
