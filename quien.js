@@ -372,6 +372,11 @@ function playerGuess(nombre) {
     if (typeof confetti === 'function') {
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
     }
+    setTimeout(() => {
+      if (typeof window.showVictoryRewardModal === 'function') {
+        window.showVictoryRewardModal();
+      }
+    }, 700);
     const slug = makeSlug(nombre);
     setStatus(`
       <div class="quien-result">
@@ -382,7 +387,14 @@ function playerGuess(nombre) {
         </div>
         <h2 class="quien-guess-name">${nombre}</h2>
         <p class="quien-desc">Era mi personaje. Lo has adivinado en <strong>${turnCount}</strong> ronda${turnCount !== 1 ? 's' : ''}.</p>
-        <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Jugar de nuevo</button>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+          <button class="guess-btn" onclick="initGame()" style="margin:0;">Jugar de nuevo</button>
+          <button class="q-btn" onclick="window.exitCurrentGame()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;"
+            onmouseover="this.style.background='rgba(239,68,68,0.2)'; this.style.borderColor='rgba(239,68,68,0.5)'; this.style.transform='scale(1.02)';"
+            onmouseout="this.style.background='rgba(239,68,68,0.12)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.transform='scale(1)';">
+            🚪 Salir del juego
+          </button>
+        </div>
       </div>`);
     document.querySelectorAll('.quien-card-3d').forEach(el => {
       el.classList.toggle('winner', el.dataset.name === nombre);
@@ -400,7 +412,14 @@ function playerGuess(nombre) {
         </div>
         <h2 class="quien-guess-name">${machineSecret.nombre}</h2>
         <p class="quien-desc">Era <strong>${machineSecret.nombre}</strong>. Más suerte la próxima vez.</p>
-        <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Jugar de nuevo</button>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+          <button class="guess-btn" onclick="initGame()" style="margin:0;">Jugar de nuevo</button>
+          <button class="q-btn" onclick="window.exitCurrentGame()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;"
+            onmouseover="this.style.background='rgba(239,68,68,0.2)'; this.style.borderColor='rgba(239,68,68,0.5)'; this.style.transform='scale(1.02)';"
+            onmouseout="this.style.background='rgba(239,68,68,0.12)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.transform='scale(1)';">
+            🚪 Salir del juego
+          </button>
+        </div>
       </div>`);
   }
 }
@@ -524,7 +543,14 @@ function onMachineGuessResult(nombre, correct) {
           <h2 class="quien-guess-name" style="font-size:1.1rem">${machineSecret.nombre}</h2>
         </div>
         <p class="quien-desc">La partida duró <strong>${turnCount}</strong> ronda${turnCount !== 1 ? 's' : ''}.</p>
-        <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Revancha</button>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+          <button class="guess-btn" onclick="initGame()" style="margin:0;">Revancha</button>
+          <button class="q-btn" onclick="window.exitCurrentGame()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;"
+            onmouseover="this.style.background='rgba(239,68,68,0.2)'; this.style.borderColor='rgba(239,68,68,0.5)'; this.style.transform='scale(1.02)';"
+            onmouseout="this.style.background='rgba(239,68,68,0.12)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.transform='scale(1)';">
+            🚪 Salir del juego
+          </button>
+        </div>
       </div>`);
   } else {
     // La máquina falla → ¡El jugador gana la partida inmediatamente!
@@ -541,6 +567,11 @@ function onMachineGuessResult(nombre, correct) {
     if (typeof confetti === 'function') {
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
     }
+    setTimeout(() => {
+      if (typeof window.showVictoryRewardModal === 'function') {
+        window.showVictoryRewardModal();
+      }
+    }, 700);
 
     const mySlug = makeSlug(mySecret.nombre);
     const machSlug = makeSlug(machineSecret.nombre);
@@ -565,7 +596,14 @@ function onMachineGuessResult(nombre, correct) {
           <h2 class="quien-guess-name" style="font-size:1.1rem">${machineSecret.nombre}</h2>
         </div>
         <p class="quien-desc">La partida duró <strong>${turnCount}</strong> ronda${turnCount !== 1 ? 's' : ''}.</p>
-        <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Jugar de nuevo</button>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+          <button class="guess-btn" onclick="initGame()" style="margin:0;">Jugar de nuevo</button>
+          <button class="q-btn" onclick="window.exitCurrentGame()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 6px;"
+            onmouseover="this.style.background='rgba(239,68,68,0.2)'; this.style.borderColor='rgba(239,68,68,0.5)'; this.style.transform='scale(1.02)';"
+            onmouseout="this.style.background='rgba(239,68,68,0.12)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.transform='scale(1)';">
+            🚪 Salir del juego
+          </button>
+        </div>
       </div>`);
   }
 }
@@ -1636,3 +1674,83 @@ function confirmAbandonGame() {
     }
   });
 }
+
+// ── Helpers Globales para Recompensas de Victoria y Salida del Juego ──
+window.exitCurrentGame = function() {
+  window._bypassAbandonWarning = true; // Evitar disparar el modal de advertencia al salir voluntariamente al terminar
+
+  // 1. Si es modo Duelo
+  if (window._duelRoomCode || (typeof gameMode !== 'undefined' && gameMode === 'duelo')) {
+    if (typeof duelExit === 'function') {
+      duelExit();
+      return;
+    }
+  }
+
+  // 2. Si es modo Online 1v1
+  if (typeof gameMode !== 'undefined' && gameMode === 'online') {
+    if (typeof cleanupOnlineRoom === 'function') cleanupOnlineRoom();
+  }
+
+  // 3. Regresar suavemente a la pantalla de bienvenida
+  if (typeof initGame === 'function') {
+    initGame();
+  } else {
+    location.reload();
+  }
+};
+
+window.showVictoryRewardModal = function() {
+  const existing = document.getElementById("lqsa-victory-modal");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "lqsa-victory-modal";
+  overlay.className = "auth-overlay";
+  overlay.style.zIndex = "21000"; 
+  overlay.style.background = "rgba(8, 4, 18, 0.9)";
+  overlay.style.backdropFilter = "blur(10px)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+
+  overlay.innerHTML = `
+    <div class="auth-box" style="width: min(420px, 92vw); padding: 30px 25px; border: 2px solid var(--accent); background: linear-gradient(145deg, #0f0923 0%, #070411 100%); text-align: center; border-radius: 20px; box-shadow: 0 15px 40px rgba(240, 192, 32, 0.25); animation: packFloat 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative;">
+      
+      <div style="font-size: 4.5rem; margin-bottom: 5px; filter: drop-shadow(0 0 12px rgba(240, 192, 32, 0.6)); animation: pulseInstruction 1.5s infinite;">🏆</div>
+      
+      <h2 style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; margin: 10px 0 5px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase;">¡VICTORIA CONSEGUIDA!</h2>
+      
+      <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.4; font-family: 'Barlow Condensed', sans-serif; margin-bottom: 20px; letter-spacing: 0.5px;">
+        La Junta de Propietarios te felicita por tu gran deducción, vecino/a. ¡Has ganado la recompensa!
+      </p>
+
+      <div style="background: rgba(240, 192, 32, 0.08); border: 1.5px solid rgba(240, 192, 32, 0.3); border-radius: 14px; padding: 15px; margin: 15px 0 25px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; color: #a3a3a3; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Recompensa Obtenida</span>
+        <div style="display: flex; align-items: center; gap: 8px; justify-content: center; animation: pulseInstruction 2s infinite;">
+          <span style="font-size: 2.2rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">🪙</span>
+          <span style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: #ffd700; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);">+50 MONEDAS</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <button class="auth-btn" style="background: var(--accent); color: #000; font-weight: bold; width: 100%; margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 1.5px; border-radius: 12px; box-shadow: 0 5px 15px rgba(240, 192, 32, 0.4); padding: 12px; cursor: pointer; transition: transform 0.15s;" 
+          onmouseover="this.style.transform='scale(1.02)'" 
+          onmouseout="this.style.transform='scale(1)'"
+          onclick="document.getElementById('lqsa-victory-modal').remove();">
+          RECLAMAR RECOMPENSA 🎉
+        </button>
+        
+        <button class="auth-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: bold; width: 100%; margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 1.5px; border-radius: 12px; padding: 10px; cursor: pointer; transition: transform 0.15s;" 
+          onmouseover="this.style.transform='scale(1.02)'; this.style.background='rgba(239, 68, 68, 0.25)'" 
+          onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(239, 68, 68, 0.15)'"
+          onclick="document.getElementById('lqsa-victory-modal').remove(); if(typeof window.exitCurrentGame === 'function') window.exitCurrentGame();">
+          🚪 SALIR DEL JUEGO
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+};
+
