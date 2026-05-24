@@ -549,3 +549,299 @@
     font-size: 1.15rem;
   }
 }
+
+/* ==========================================================================
+   6. BOTONES PREMIUM DE NAVEGACIÓN (TIENDA Y MISIONES)
+   ========================================================================== */
+
+.btn-premium-shop,
+.btn-premium-missions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1.5px;
+  padding: 8px 24px;
+  border-radius: 30px;
+  cursor: pointer;
+  color: #fff;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.btn-premium-shop {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #059669 100%);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+.btn-premium-shop:hover {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #10b981 100%);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  transform: translateY(-2.5px);
+  border-color: rgba(52, 211, 153, 0.7);
+}
+
+.btn-premium-missions {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #1d4ed8 100%);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.btn-premium-missions:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  transform: translateY(-2.5px);
+  border-color: rgba(96, 165, 250, 0.7);
+}
+
+.btn-premium-shop:active,
+.btn-premium-missions:active,
+.btn-premium-workshop:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.btn-premium-workshop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1.5px;
+  padding: 8px 24px;
+  border-radius: 30px;
+  cursor: pointer;
+  color: #fff;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+  margin: 0;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #7c3aed 100%);
+  border: 1px solid rgba(124, 58, 237, 0.45);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2);
+}
+
+.btn-premium-workshop:hover {
+  background: linear-gradient(135deg, #a855f7 0%, #c084fc 50%, #a855f7 100%);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+  transform: translateY(-2.5px);
+  border-color: rgba(192, 132, 252, 0.7);
+}
+
+.premium-coin-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.04) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  padding: 7px 16px;
+  border-radius: 30px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  color: #fff;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.08);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   7. SISTEMA DE UPGRADES: FIRMA PREMIUM, ESTRELLAS Y DÚOS
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap');
+
+.card-signature-wrapper {
+  position: absolute;
+  bottom: 46%;
+  left: 6%;
+  right: 6%;
+  height: 60px;
+  pointer-events: none;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-7deg);
+}
+
+.signature-scribble {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+}
+
+.signature-text {
+  font-family: 'Caveat', cursive;
+  font-size: 2.1rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 0 5px #ffd700;
+  letter-spacing: 0.5px;
+  transform: translateY(-2px);
+  white-space: nowrap;
+}
+
+.card-desquicie-stars {
+  color: #ffd700;
+  font-size: 1.15rem;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+  letter-spacing: 3px;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+/* Upgrade Workshop tab buttons & styling */
+.workshop-tab-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 10px;
+}
+
+.workshop-tab-btn {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #888;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  padding: 8px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.workshop-tab-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.workshop-tab-btn.active {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: #fff;
+  border-color: #7c3aed;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+}
+
+.workshop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.workshop-card-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.25s ease;
+}
+
+.workshop-card-item:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(240, 192, 32, 0.25);
+}
+
+.workshop-card-thumb {
+  width: 70px;
+  height: 98px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.workshop-card-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.workshop-card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #fff;
+  margin: 0 0 3px 0;
+}
+
+.workshop-card-meta {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+}
+
+.workshop-action-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #000;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.workshop-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.workshop-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #334155;
+  color: #64748b;
+}
+
+/* Combat Stats Zoom Modal Display styles */
+.zoom-stats-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+
+.zoom-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+.zoom-stats-row:last-child {
+  margin-bottom: 0;
+}
+
+.zoom-stats-label {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.zoom-stats-value {
+  color: #ffd700;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+
+

@@ -4,6 +4,204 @@
 
 let userAlbumData = { coins: 0, cards: {}, missions: {} };
 
+// ==========================================================================
+//  TCG DUEL PREPARATION: RECETAS DE DÚOS Y ATRIBUTOS DE COMBATE
+// ==========================================================================
+
+const DUO_RECIPES = [
+    {
+        id: "duo-recio-berta",
+        name: "Los Recio (Crisis Conyugal)",
+        ingredients: ["antonio-recio", "berta-escobar"],
+        coinsCost: 200,
+        number: "D01",
+        occupation: "Mayoristas del Amor",
+        season: "T1-T15",
+        type: "Dúo Histórico",
+        quote: "¡Berta, cacho cabrona! ¡Antonio, por el amor de Dios, recapacita!",
+        image: "img/personajes/antonio-recio.webp",
+        hp: 450,
+        atk: 180,
+        def: 160,
+        combatType: "Dúo Mayorista",
+        attacks: [
+            { name: "Terapia de Pareja", power: 100, desc: "Restaura salud y confunde a los vecinos rivales." },
+            { name: "Centollazo Conyugal", power: 170, desc: "Ataque masivo doble con mariscos y crucifijos." }
+        ]
+    },
+    {
+        id: "duo-amador-leo",
+        name: "Los Leones (¡Mente Fría!)",
+        ingredients: ["amador-rivas", "leo-romani"],
+        coinsCost: 200,
+        number: "D02",
+        occupation: "Leones de Montepinar",
+        season: "T1-T8",
+        type: "Dúo Histórico",
+        quote: "¡¿Qué pasa?! ¡Claro que sí, hombre! ¡Mente fría, león!",
+        image: "img/personajes/amador-rivas.webp",
+        hp: 400,
+        atk: 190,
+        def: 140,
+        combatType: "Dúo León",
+        attacks: [
+            { name: "Rugido del León", power: 90, desc: "Aumenta la fuerza de ataque de todo tu mazo." },
+            { name: "¡Pinchito con Leo!", power: 180, desc: "Ataque combinado arrollador en el Max&Henry." }
+        ]
+    },
+    {
+        id: "duo-fermin-estela",
+        name: "Esparraguitos de Mar",
+        ingredients: ["fermin-trujillo", "estela-reynolds"],
+        coinsCost: 200,
+        number: "D03",
+        occupation: "Buscavidas del Espectáculo",
+        season: "T3-T7",
+        type: "Dúo Histórico",
+        quote: "¡Fermín, tráeme un whisky! ¡Estela, eres un torbellino de sensualidad!",
+        image: "img/personajes/fermin-trujillo.webp",
+        hp: 420,
+        atk: 175,
+        def: 150,
+        combatType: "Dúo Artístico",
+        attacks: [
+            { name: "Foco de Estrellato", power: 95, desc: "Ciega al rival reduciendo su precisión un 30%." },
+            { name: "La Doble Estafa Nelson", power: 165, desc: "Estafa masiva con esparraguitos de mar." }
+        ]
+    },
+    {
+        id: "duo-enrique-araceli",
+        name: "Cuchufleta y Enrique",
+        ingredients: ["enrique-pastor", "araceli-madariaga"],
+        coinsCost: 200,
+        number: "D04",
+        occupation: "Políticos del Amor",
+        season: "T1-T12",
+        type: "Dúo Histórico",
+        quote: "¡Araceli, vuelve a casa! ¡Enrique, necesito mi espacio cósmico!",
+        image: "img/personajes/enrique-pastor.webp",
+        hp: 410,
+        atk: 160,
+        def: 170,
+        combatType: "Dúo Pastor",
+        attacks: [
+            { name: "Equilibrio Energético", power: 80, desc: "Limpia todos los estados negativos de tu tablero." },
+            { name: "Normativa Municipal", power: 150, desc: "Impone una derrama masiva de daño grupal." }
+        ]
+    }
+];
+
+function enhanceCardsWithCombatStats() {
+    if (typeof ALBUM_CARDS === 'undefined') return;
+    
+    // Verificar si ya se ha ejecutado
+    if (ALBUM_CARDS.some(c => c.hp !== undefined)) return;
+
+    ALBUM_CARDS.forEach((card) => {
+        const rarity = card.baseRarity || { id: "common" };
+        let baseHp = 100;
+        let baseAtk = 40;
+        let baseDef = 30;
+        let combatType = "Inquilino";
+
+        if (rarity.id === "common") {
+            baseHp = 95; baseAtk = 35; baseDef = 25;
+        } else if (rarity.id === "rare") {
+            baseHp = 135; baseAtk = 50; baseDef = 40;
+        } else if (rarity.id === "epic") {
+            baseHp = 175; baseAtk = 65; baseDef = 55;
+        } else if (rarity.id === "legendary") {
+            baseHp = 225; baseAtk = 85; baseDef = 70;
+        } else if (rarity.id === "foil") {
+            baseHp = 265; baseAtk = 105; baseDef = 90;
+        }
+
+        // Asignar clase de combate elemental según Lore de LQSA
+        const nameUpper = card.name.toUpperCase();
+        if (nameUpper.includes("RECIO") || nameUpper.includes("BERTA")) {
+            combatType = "Mayorista";
+        } else if (nameUpper.includes("AMADOR") || nameUpper.includes("RIVAS") || nameUpper.includes("LEO") || nameUpper.includes("TEODORO")) {
+            combatType = "León";
+        } else if (nameUpper.includes("ENRIQUE") || nameUpper.includes("PASTOR") || nameUpper.includes("ARACELI") || nameUpper.includes("VICENTE") || nameUpper.includes("GOYA") || nameUpper.includes("DRAMA")) {
+            combatType = "Junta";
+        } else if (nameUpper.includes("FERMÍN") || nameUpper.includes("TRUJILLO") || nameUpper.includes("COQUE") || nameUpper.includes("MAXI")) {
+            combatType = "Buscavidas";
+        } else {
+            combatType = "Inquilino";
+        }
+
+        // Definición de Ataques y Habilidades Especiales
+        let attacks = [
+            { name: "Disputa Vecinal", power: 35, desc: "Crea una derrama sorpresa que desquicia al oponente." },
+            { name: "¡Cuchufleta!", power: 50, desc: "Un golpe de afecto inesperado." }
+        ];
+
+        if (card.name.includes("Recio")) {
+            attacks = [
+                { name: "Lanzamiento de Centollo", power: 65, desc: "Lanza un bogavante fresco directo a la cara." },
+                { name: "¡Mayorista, no limpio pescado!", power: 90, desc: "Ataque fulminante con un pez espada congelado." }
+            ];
+        } else if (card.name.includes("Amador") || card.name.includes("Rivas")) {
+            attacks = [
+                { name: "¡Pinchito Obligatorio!", power: 60, desc: "Seducción arrolladora que paraliza al rival." },
+                { name: "¡Espartaco!", power: 85, desc: "Se quita la camiseta y embiste como el guerrero de Albacete." }
+            ];
+        } else if (card.name.includes("Fermín") || card.name.includes("Trujillo")) {
+            attacks = [
+                { name: "Estafa del Espárrago", power: 55, desc: "Un timo inmobiliario que reduce la defensa enemiga." },
+                { name: "¡Doble Nelson!", power: 80, desc: "Su llave de lucha libre favorita." }
+            ];
+        } else if (card.name.includes("Coque")) {
+            attacks = [
+                { name: "Riego de Plantas", power: 40, desc: "Moja al rival con agua sucia de regar." },
+                { name: "Plantación de Hierba", power: 75, desc: "Dormir al rival con humo denso del invernadero." }
+            ];
+        } else if (card.name.includes("Enrique") || card.name.includes("Pastor")) {
+            attacks = [
+                { name: "Lectura de Estatutos", power: 45, desc: "Duerme de aburrimiento al contrincante." },
+                { name: "Doble Cuchufleta", power: 75, desc: "Llama a Araceli para pedir auxilio matrimonial." }
+            ];
+        } else if (card.name.includes("Estela") || card.name.includes("Reynolds")) {
+            attacks = [
+                { name: "Lanzamiento de Whisky", power: 60, desc: "Lanza un vaso de tubo con hielo." },
+                { name: "¡Fernando Esteso me chupó un pezón!", power: 95, desc: "Ataque sónico insoportable que confunde al oponente." }
+            ];
+        }
+
+        card.hp = baseHp;
+        card.atk = baseAtk;
+        card.def = baseDef;
+        card.combatType = combatType;
+        card.attacks = attacks;
+    });
+
+    // Inyectar Dúos Dinámicos al Catálogo general para que se rendericen en el álbum
+    DUO_RECIPES.forEach(recipe => {
+        ALBUM_CARDS.push({
+            id: recipe.id,
+            number: recipe.number,
+            name: recipe.name,
+            occupation: recipe.occupation,
+            season: recipe.season,
+            type: recipe.type,
+            quote: recipe.quote,
+            image: recipe.image,
+            baseRarity: CARD_RARITIES.FOIL,
+            hp: recipe.hp,
+            atk: recipe.atk,
+            def: recipe.def,
+            combatType: recipe.combatType,
+            attacks: recipe.attacks,
+            isDuo: true,
+            ingredients: recipe.ingredients,
+            coinsCost: recipe.coinsCost
+        });
+    });
+}
+
+// Ejecutar inmediatamente
+setTimeout(enhanceCardsWithCombatStats, 100);
+
 // Remoción dinámica y automática de fondos blancos o negros para las imágenes de los sobres
 function makeImageTransparent(imgElement) {
     if (!imgElement) return;
@@ -445,14 +643,16 @@ function renderPocketHtml(cardIndex) {
 
     if (!owned) {
         // Pocket Empty (Locked card)
+        const lockedDesc = card.isDuo ? "Fusión en Taller" : "Cromo Bloqueado";
+        const lockedName = card.isDuo ? card.name : "¿¿??";
         return `
-            <div class="album-pocket pocket-empty" data-id="${card.id}">
+            <div class="album-pocket pocket-empty" data-id="${card.id}" style="${card.isDuo ? 'border: 2px dashed rgba(240, 192, 32, 0.4); cursor: pointer;' : ''}" onclick="${card.isDuo ? 'openWorkshopUI()' : ''}">
                 <div class="pocket-glare"></div>
                 <div class="locked-card-body">
-                    <div class="locked-silhouette">?</div>
+                    <div class="locked-silhouette" style="${card.isDuo ? 'font-size: 2rem;' : ''}">${card.isDuo ? '👥' : '?'}</div>
                     <div class="locked-number">#${card.number}</div>
-                    <div class="locked-name">¿¿??</div>
-                    <div class="locked-desc">Cromo Bloqueado</div>
+                    <div class="locked-name" style="font-size: 0.8rem; margin: 4px 0;">${lockedName}</div>
+                    <div class="locked-desc" style="color: ${card.isDuo ? '#ffd700' : '#888'};">${lockedDesc}</div>
                 </div>
             </div>
         `;
@@ -492,6 +692,26 @@ function zoomCard(cardId, isFoil = false) {
     const borderCol = isFoil ? CARD_RARITIES.FOIL.color : rarity.color;
     const rarityName = isFoil ? "🌈 Holográfica Foil" : rarity.name;
     const rarityClass = isFoil ? "rarity-design-foil" : `rarity-design-${rarity.id}`;
+
+    // Recuperar nivel y estado de firma del cromo
+    const level = userCard ? (userCard.level || 1) : 1;
+    const signed = userCard ? !!userCard.signed : false;
+
+    // Calcular estadísticas mejoradas de combate
+    let currentHp = card.hp || 100;
+    let currentAtk = card.atk || 40;
+    let currentDef = card.def || 30;
+
+    const levelMultiplier = 1 + (level - 1) * 0.15;
+    currentHp = Math.round(currentHp * levelMultiplier);
+    currentAtk = Math.round(currentAtk * levelMultiplier);
+    currentDef = Math.round(currentDef * levelMultiplier);
+
+    if (signed) {
+        currentHp = Math.round(currentHp * 1.3);
+        currentAtk = Math.round(currentAtk * 1.3);
+        currentDef = Math.round(currentDef * 1.3);
+    }
 
     // Create modal overlay
     const modal = document.createElement("div");
@@ -581,22 +801,52 @@ function zoomCard(cardId, isFoil = false) {
         <div class="zoomed-card-inner" id="zoomed-card-inner">
           <div class="zoomed-card-front lqsa-card-item ${rarityClass} ${isFoil ? 'is-foil' : ''} ${rarity.id === 'legendary' ? 'is-legendary' : ''}">
             <div class="card-foil-overlay"></div>
-            <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
-              ${rarityName}
-            </div>
-            <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
             
-            <div class="card-info-box" style="padding: 16px 20px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.96);">
-              <div style="text-align: left;">
-                <div class="card-name" style="font-size: 1.5rem; margin-bottom: 3px; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700;">${card.name}</div>
-                <div class="card-job" style="font-size: 0.95rem; color: #ffd700; margin-bottom: 8px; font-family:'Barlow Condensed', sans-serif;">💼 Ocupación: ${card.occupation}</div>
-                <div class="card-quote" style="font-size: 0.9rem; color: #94a3b8; font-style: italic; line-height: 1.4; max-height: 58px; overflow-y: auto;">
+            ${signed ? `
+              <div class="card-signature-wrapper">
+                <svg class="signature-scribble" viewBox="0 0 100 30">
+                  <path d="M5,15 C25,3 40,28 50,15 C65,2 75,28 95,15" fill="none" stroke="rgba(255, 215, 0, 0.55)" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <div class="signature-text">${card.name.split(' ')[0]}</div>
+              </div>
+            ` : ''}
+
+            <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
+              ${rarityName} ${signed ? '✒️ FIRMADA' : ''}
+            </div>
+            <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 48%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+            
+            <div class="card-info-box" style="padding: 12px 16px; height: 52%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.96);">
+              <div style="text-align: left; overflow-y: auto; max-height: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div class="card-name" style="font-size: 1.35rem; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700; margin-bottom: 1px;">${card.name}</div>
+                  <div class="card-desquicie-stars">${'★'.repeat(level)}${'☆'.repeat(5 - level)}</div>
+                </div>
+                <div class="card-job" style="font-size: 0.8rem; color: #ffd700; margin-bottom: 4px; font-family:'Barlow Condensed', sans-serif;">💼 Ocupación: ${card.occupation}</div>
+                <div class="card-quote" style="font-size: 0.75rem; color: #94a3b8; font-style: italic; line-height: 1.25; max-height: 36px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
                   "${card.quote}"
                 </div>
+
+                <!-- Panel de Estadísticas Duelo TCG -->
+                <div class="zoom-stats-box">
+                  <div class="zoom-stats-row">
+                    <span class="zoom-stats-label">Clase Duelo:</span>
+                    <span class="zoom-stats-value" style="color:#a855f7;">${card.combatType || 'Vecino'}</span>
+                  </div>
+                  <div class="zoom-stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px;">
+                    <span style="font-size:0.75rem; color:#f87171; font-weight:bold;">❤️ HP: ${currentHp}</span>
+                    <span style="font-size:0.75rem; color:#facc15; font-weight:bold;">⚔️ ATK: ${currentAtk}</span>
+                    <span style="font-size:0.75rem; color:#60a5fa; font-weight:bold;">🛡️ DEF: ${currentDef}</span>
+                  </div>
+                  <div style="font-size: 0.72rem; color: #ffd700; font-weight: bold; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px;">Habilidad Duelo TCG:</div>
+                  <div style="font-size: 0.68rem; color: #cbd5e1; line-height: 1.2; max-height: 28px; overflow: hidden;">
+                    <strong>${card.attacks && card.attacks[0] ? card.attacks[0].name : 'Sermón Vecinal'}:</strong> ${card.attacks && card.attacks[0] ? card.attacks[0].desc : 'Chapa comunitaria de derramas.'}
+                  </div>
+                </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 4px;">
-                <span style="font-size: 0.75rem; color: #64748b; font-weight: bold;">T. Aparición: ${card.season}</span>
-                <span class="card-id-num" style="font-size: 0.78rem; color: #94a3b8; font-family: monospace;">Nº #${card.number}/150</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px; margin-top: 2px;">
+                <span style="font-size: 0.68rem; color: #64748b; font-weight: bold;">T. Aparición: ${card.season}</span>
+                <span class="card-id-num" style="font-size: 0.7rem; color: #94a3b8; font-family: monospace;">Nº #${card.number}/150</span>
               </div>
             </div>
             ${count > 1 ? `<div class="card-counter" style="position:absolute; top: 12px; right: 12px; font-size:1.1rem; padding: 4px 10px; border-radius: 8px; z-index: 10;">×${count}</div>` : ''}
@@ -903,20 +1153,22 @@ function openAlbumUI() {
 
     overlay.innerHTML = `
     <div class="auth-box album-box" style="width:min(1150px, 98vw); max-height:92vh; overflow-y:auto; padding: 25px; display:flex; flex-direction:column; gap:16px;">
-      <button class="auth-x" onclick="closeAllModals()">✕</button>
+      <button class="auth-x" onclick="closeAllModals()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
       
       <!-- Premium dashboard top-bar -->
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:15px; width:100%;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:15px; width:100%; padding-right: 55px; box-sizing: border-box;">
         <div style="text-align:left;">
           <h2 class="auth-h2" style="color:#ffd700; margin:0; text-shadow:0 0 10px rgba(240,192,32,0.25); font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:1px;">🎴 ÁLBUM DE LA COMUNIDAD</h2>
           <p class="auth-p" style="margin:2px 0 0 0; color:#94a3b8; font-size:0.9rem;">Colecciona los cromos exclusivos y fusiona repetidos en la Catena Vecinal.</p>
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
-          <div style="display:inline-flex; align-items:center; background:rgba(240,192,32,0.1); border:1px solid rgba(240,192,32,0.3); padding:6px 12px; border-radius:20px; font-family:'Barlow Condensed',sans-serif; font-weight:bold; color:#fff; gap:6px;">
-            🪙 <span style="color:#ffd700; font-size:1.15rem;">${userAlbumData.coins}</span> Monedas
+          <div class="premium-coin-badge">
+            🪙 <span style="color:#ffd700; font-size:1.15rem; font-family:'Bebas Neue',sans-serif;">${userAlbumData.coins}</span> Monedas
           </div>
-          <button class="auth-btn" onclick="openShopUI()" style="background:linear-gradient(135deg, #16a34a, #15803d); margin:0; font-weight:bold; letter-spacing:0.5px;">🛒 Tienda</button>
-          <button class="auth-btn" onclick="openMissionsUI()" style="background:linear-gradient(135deg, #2563eb, #1d4ed8); margin:0; font-weight:bold; letter-spacing:0.5px;">📅 Misiones</button>
+          <button class="btn-premium-shop" onclick="openShopUI()">🛒 Tienda</button>
+          <button class="btn-premium-missions" onclick="openMissionsUI()">📅 Misiones</button>
+          <button class="btn-premium-workshop" onclick="openWorkshopUI()">🛠️ Taller Vecinal</button>
+          <button class="btn-premium-shop" style="background:linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #dc2626 100%); border: 1px solid rgba(220, 38, 38, 0.45); box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);" onclick="openCardDuelLobby()">⚔️ Duelo TCG</button>
         </div>
       </div>
       
@@ -1012,9 +1264,9 @@ function openShopUI() {
     overlay.className = "auth-overlay album-overlay-theme";
 
     overlay.innerHTML = `
-    <div class="auth-box album-box" style="width:min(960px, 96vw); max-height:85vh; overflow-y:auto; padding: 30px;">
-      <button class="auth-x" onclick="openAlbumUI()">✕</button>
-      <h2 class="auth-h2" style="color:var(--accent); font-size: 2.2rem; text-shadow: 0 0 15px rgba(240, 192, 32, 0.2); margin-top: 10px;">🛒 TIENDA DE SOBRES</h2>
+    <div class="auth-box album-box" style="width:min(960px, 96vw); max-height:85vh; overflow-y:auto; padding: 30px; position: relative;">
+      <button class="auth-x" onclick="openAlbumUI()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+      <h2 class="auth-h2" style="color:var(--accent); font-size: 2.2rem; text-shadow: 0 0 15px rgba(240, 192, 32, 0.2); margin-top: 10px; padding-right: 50px;">🛒 TIENDA DE SOBRES</h2>
       <p class="auth-p" style="font-size: 1.1rem; margin-bottom: 25px;">
         Tus Monedas actuales: <span id="shop-coin-count" style="color:#ffd700; font-weight:bold; font-size: 1.3rem;">${userAlbumData.coins}</span> 🪙
       </p>
@@ -1081,9 +1333,9 @@ function openMissionsUI() {
     }).join('');
 
     overlay.innerHTML = `
-    <div class="auth-box" style="width:min(500px, 94vw);">
-      <button class="auth-x" onclick="openAlbumUI()">✕</button>
-      <h2 class="auth-h2" style="color:var(--accent);">📅 MISIONES DIARIAS</h2>
+    <div class="auth-box" style="width:min(500px, 94vw); position: relative;">
+      <button class="auth-x" onclick="openAlbumUI()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+      <h2 class="auth-h2" style="color:var(--accent); padding-right: 50px;">📅 MISIONES DIARIAS</h2>
       <p class="auth-p">Completa tareas diarias para financiar tu vicio por los sobres de cartas.</p>
       <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
         ${mHtml || '<p style="color:var(--text2)">Cargando misiones...</p>'}
@@ -1516,6 +1768,282 @@ function initSummaryGalleryParallax() {
             }
         };
     });
+}
+
+// ==========================================================================
+//  TALLER VECINAL: LOGICA DE UPGRADES, FIRMAS Y DÚOS HISTÓRICOS
+// ==========================================================================
+
+let currentWorkshopTab = 'signatures';
+
+function openWorkshopUI() {
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+    
+    // Asegurar que las estadísticas estén cargadas
+    enhanceCardsWithCombatStats();
+
+    overlay.style.display = "flex";
+    overlay.style.zIndex = "9999";
+
+    let contentHtml = "";
+
+    if (currentWorkshopTab === 'signatures') {
+        // Filtrar vecinos con repetidos >= 5 (count >= 6) y no firmados
+        const eligible = ALBUM_CARDS.filter(c => !c.isDuo).filter(card => {
+            const userCard = userAlbumData.cards[card.id];
+            return userCard && userCard.count >= 6 && !userCard.signed;
+        });
+
+        if (eligible.length === 0) {
+            contentHtml = `
+                <div style="text-align:center; padding:40px; color:#94a3b8; font-family:'Barlow Condensed', sans-serif; width:100%; grid-column: 1 / -1;">
+                    <div style="font-size:3rem; margin-bottom:12px;">✒️</div>
+                    <h3 style="color:#fff; font-size:1.4rem; margin:0 0 8px 0;">No tienes vecinos listos para Firmar</h3>
+                    <p style="margin:0; font-size:0.95rem; max-width:400px; margin:0 auto; line-height:1.4;">Requieres acumular **al menos 5 repetidos** de una misma carta (un total de 6 copias) para que el vecino acuda a la Junta a estampar su autógrafo premium.</p>
+                </div>
+            `;
+        } else {
+            contentHtml = eligible.map(card => {
+                const userCard = userAlbumData.cards[card.id];
+                const dups = userCard.count - 1;
+                return `
+                    <div class="workshop-card-item">
+                        <img class="workshop-card-thumb" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'">
+                        <div class="workshop-card-details">
+                            <h4 class="workshop-card-title">${card.name}</h4>
+                            <p class="workshop-card-meta">💼 ${card.occupation} | ❤️ HP Base: ${card.hp}</p>
+                            <div style="font-size:0.75rem; color:#ffd700; margin-bottom:8px; font-weight:bold;">📋 Repetidos: ${dups}/5 consumibles</div>
+                        </div>
+                        <button class="workshop-action-btn" onclick="upgradeSignature('${card.id}')">✒️ Firmar Cromo</button>
+                    </div>
+                `;
+            }).join("");
+        }
+    } else if (currentWorkshopTab === 'desquicie') {
+        // Filtrar vecinos con repetidos (count > 1) y nivel < 5
+        const eligible = ALBUM_CARDS.filter(c => !c.isDuo).filter(card => {
+            const userCard = userAlbumData.cards[card.id];
+            return userCard && userCard.count > 1 && (userCard.level || 1) < 5;
+        });
+
+        if (eligible.length === 0) {
+            contentHtml = `
+                <div style="text-align:center; padding:40px; color:#94a3b8; font-family:'Barlow Condensed', sans-serif; width:100%; grid-column: 1 / -1;">
+                    <div style="font-size:3rem; margin-bottom:12px;">📈</div>
+                    <h3 style="color:#fff; font-size:1.4rem; margin:0 0 8px 0;">Sin Vecinos para Desquiciar</h3>
+                    <p style="margin:0; font-size:0.95rem; max-width:400px; margin:0 auto; line-height:1.4;">Consigue cartas repetidas de tus vecinos abriendo sobres para aumentar sus estrellas de **Desquicie/Locura** y mejorar sus estadísticas de combate.</p>
+                </div>
+            `;
+        } else {
+            contentHtml = eligible.map(card => {
+                const userCard = userAlbumData.cards[card.id];
+                const currentLvl = userCard.level || 1;
+                const dups = userCard.count - 1;
+                const cost = currentLvl; // Coste para subir nivel = nivel actual
+                const canUpgrade = dups >= cost;
+                
+                return `
+                    <div class="workshop-card-item">
+                        <img class="workshop-card-thumb" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'">
+                        <div class="workshop-card-details">
+                            <h4 class="workshop-card-title">${card.name}</h4>
+                            <p class="workshop-card-meta">💼 ${card.occupation} | Nivel: ${'★'.repeat(currentLvl)}${'☆'.repeat(5 - currentLvl)}</p>
+                            <div style="font-size:0.75rem; color:#ffd700; margin-bottom:8px; font-weight:bold;">📈 Coste: ${cost} repetidos (Tienes ${dups})</div>
+                        </div>
+                        <button class="workshop-action-btn" ${!canUpgrade ? 'disabled' : ''} onclick="upgradeDesquicieLevel('${card.id}')">📈 Subir Desquicie</button>
+                    </div>
+                `;
+            }).join("");
+        }
+    } else if (currentWorkshopTab === 'duos') {
+        contentHtml = DUO_RECIPES.map(recipe => {
+            const hasDuo = !!userAlbumData.cards[recipe.id];
+            
+            const ing1Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[0]);
+            const ing2Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[1]);
+            
+            const hasIng1 = !!userAlbumData.cards[recipe.ingredients[0]];
+            const hasIng2 = !!userAlbumData.cards[recipe.ingredients[1]];
+            
+            const hasCoins = userAlbumData.coins >= recipe.coinsCost;
+            const canFuse = hasIng1 && hasIng2 && hasCoins && !hasDuo;
+
+            return `
+                <div class="workshop-card-item" style="border: 1px solid ${hasDuo ? 'rgba(240, 192, 32, 0.45)' : 'rgba(255,255,255,0.06)'}; background: ${hasDuo ? 'rgba(240, 192, 32, 0.03)' : 'rgba(255,255,255,0.02)'};">
+                    <div style="display:flex; flex-direction:column; gap:4px; position:relative; width:60px; height:85px; min-width:60px;">
+                      <img class="workshop-card-thumb" src="${ing1Card ? ing1Card.image : 'img/personajes/amador-rivas.webp'}" style="width:45px; height:60px; border-radius:5px; position:absolute; top:0; left:0; object-fit:cover;">
+                      <img class="workshop-card-thumb" src="${ing2Card ? ing2Card.image : 'img/personajes/berta-escobar.webp'}" style="width:45px; height:60px; border-radius:5px; position:absolute; bottom:0; right:0; object-fit:cover; border-color:#ffd700;">
+                    </div>
+                    <div class="workshop-card-details">
+                        <h4 class="workshop-card-title" style="color:${hasDuo ? '#ffd700' : '#fff'};">${recipe.name}</h4>
+                        <p class="workshop-card-meta" style="margin-bottom: 4px;">👥 Ingredientes: 
+                          <span style="color:${hasIng1 ? '#4ade80' : '#ef4444'}; font-weight:bold;">${ing1Card ? ing1Card.name.split(' ')[0] : ''} ${hasIng1 ? '✓' : '✗'}</span> y 
+                          <span style="color:${hasIng2 ? '#4ade80' : '#ef4444'}; font-weight:bold;">${ing2Card ? ing2Card.name.split(' ')[0] : ''} ${hasIng2 ? '✓' : '✗'}</span>
+                        </p>
+                        <div style="font-size:0.75rem; color:#60a5fa; font-weight:bold;">🪙 Coste: <span style="color:${hasCoins ? '#ffd700' : '#ef4444'};">${recipe.coinsCost} Monedas</span></div>
+                    </div>
+                    ${hasDuo ? `
+                        <button class="workshop-action-btn" style="background:#15803d; color:#fff;" disabled>✓ Desbloqueado</button>
+                    ` : `
+                        <button class="workshop-action-btn" ${!canFuse ? 'disabled' : ''} style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;" onclick="fuseDuo('${recipe.id}')">👥 Fusionar Dúo</button>
+                    `}
+                </div>
+            `;
+        }).join("");
+    }
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container" style="max-width: 900px; width: 95vw; background: radial-gradient(circle at 50% 50%, #171138 0%, #080515 100%); border: 2px solid rgba(124, 58, 237, 0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; position: relative;">
+        <button class="auth-x" onclick="closeAllModals(); openAlbumUI();" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+        
+        <div style="text-align:left; margin-bottom: 20px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px;">
+          <h2 style="font-family:'Bebas Neue',sans-serif; color:#c084fc; font-size:2.4rem; letter-spacing:1px; margin:0; text-shadow:0 0 15px rgba(124, 58, 237, 0.3);">🛠️ TALLER DE LA JUNTA VECINAL</h2>
+          <p style="color:#94a3b8; font-size:0.95rem; margin:4px 0 0 0;">Consume tus cartas repetidas para conseguir autógrafos premium, subir el nivel de desquicie vecinal y fusionar Dúos Históricos.</p>
+        </div>
+
+        <!-- Botones de Pestañas -->
+        <div class="workshop-tab-container">
+          <button class="workshop-tab-btn ${currentWorkshopTab === 'signatures' ? 'active' : ''}" onclick="switchWorkshopTab('signatures')">✒️ Firmas Premium</button>
+          <button class="workshop-tab-btn ${currentWorkshopTab === 'desquicie' ? 'active' : ''}" onclick="switchWorkshopTab('desquicie')">📈 Nivel Desquicie</button>
+          <button class="workshop-tab-btn ${currentWorkshopTab === 'duos' ? 'active' : ''}" onclick="switchWorkshopTab('duos')">👥 Dúos Vecinales</button>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="workshop-grid">
+          ${contentHtml}
+        </div>
+      </div>
+    `;
+}
+
+function switchWorkshopTab(tab) {
+    currentWorkshopTab = tab;
+    openWorkshopUI();
+}
+
+async function upgradeSignature(cardId) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const userCard = userAlbumData.cards[cardId];
+    if (!userCard || userCard.count < 6) return;
+
+    const db = firebase.database();
+    const cardRef = db.ref(`users/${uid}/album/cards/${cardId}`);
+
+    await cardRef.transaction(current => {
+        if (current && current.count >= 6) {
+            return {
+                count: current.count - 5,
+                signed: true,
+                foil: true,
+                level: current.level || 1,
+                obtainedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+        }
+        return current;
+    });
+
+    if (window.showLqsaAlert) {
+        showLqsaAlert("¡El cromo ha sido firmado! Se ha grabado una firma manuscrita y ha ganado +30% de estadísticas de combate.", "¡AUTÓGRAFO COMPLETO! ✒️", "success");
+    } else {
+        alert("¡Cromo autografiado con éxito! Ha ganado +30% de atributos de duelo.");
+    }
+
+    openWorkshopUI();
+}
+
+async function upgradeDesquicieLevel(cardId) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const userCard = userAlbumData.cards[cardId];
+    if (!userCard) return;
+
+    const currentLvl = userCard.level || 1;
+    const required = currentLvl; // Coste en repetidos = nivel actual
+
+    if (userCard.count < 1 + required) {
+        if (window.showLqsaAlert) showLqsaAlert("No tienes suficientes repetidos para esta mejora.", "MEJORA IMPOSIBLE", "error");
+        return;
+    }
+
+    const db = firebase.database();
+    const cardRef = db.ref(`users/${uid}/album/cards/${cardId}`);
+
+    await cardRef.transaction(current => {
+        const lvl = current.level || 1;
+        const reqCost = lvl;
+        if (current && current.count >= 1 + reqCost && lvl < 5) {
+            return {
+                count: current.count - reqCost,
+                level: lvl + 1,
+                signed: !!current.signed,
+                foil: !!current.foil,
+                obtainedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+        }
+        return current;
+    });
+
+    if (window.showLqsaAlert) {
+        showLqsaAlert("¡Estrellas de Desquicie aumentadas! El vecino ha ganado +15% de estadísticas de combate.", "¡DESQUICIE AUMENTADO! 📈", "success");
+    } else {
+        alert("¡Nivel de Desquicie aumentado con éxito!");
+    }
+
+    openWorkshopUI();
+}
+
+async function fuseDuo(recipeId) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const recipe = DUO_RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    if (userAlbumData.coins < recipe.coinsCost) {
+        if (window.showLqsaAlert) showLqsaAlert("No tienes suficientes monedas para fusionar este dúo.", "MONEDAS INSUFICIENTES", "error");
+        return;
+    }
+
+    const hasIng1 = !!userAlbumData.cards[recipe.ingredients[0]];
+    const hasIng2 = !!userAlbumData.cards[recipe.ingredients[1]];
+    if (!hasIng1 || !hasIng2) {
+        if (window.showLqsaAlert) showLqsaAlert("Te faltan ingredientes en tu álbum para esta fusión.", "INGREDIENTES FALTANTES", "error");
+        return;
+    }
+
+    const db = firebase.database();
+    const userRef = db.ref(`users/${uid}`);
+
+    try {
+        // Restar monedas
+        await userRef.child('coins').transaction(current => (current || 0) - recipe.coinsCost);
+        
+        // Agregar carta de Dúo al catálogo del usuario
+        await userRef.child(`album/cards/${recipeId}`).set({
+            count: 1,
+            foil: true,
+            level: 1,
+            signed: false,
+            obtainedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        // Registrar progreso de misión
+        await progressMission(uid, "open_pack", 1); // Contar como una desbloqueada general
+
+        if (window.showLqsaAlert) {
+            showLqsaAlert("¡Fusión completada! El Dúo Histórico ha sido invocado a tu Álbum de la Comunidad.", "¡DÚO DESBLOQUEADO! 👥", "success");
+        } else {
+            alert("¡Fusión realizada con éxito! Dúo Histórico desbloqueado.");
+        }
+
+        openWorkshopUI();
+    } catch (e) {
+        console.error("Error fusionando dúo:", e);
+    }
 }
 
 function injectAlbumStyles() {
@@ -2277,3 +2805,906 @@ function injectAlbumStyles() {
   `;
     document.head.appendChild(style);
 }
+
+// ==========================================================================
+//  DUELO DE CARTAS ONLINE: SISTEMA DE COMBATE TCG POR TURNOS (ESTILO POKEMON)
+// ==========================================================================
+
+let localCardDuelDeck = [];
+let cardDuelRoomListener = null;
+
+const LQSA_TYPES = {
+  "Mayorista": { icon: "🦀", color: "#f87171", element: "Fuego", label: "Mayorista (Fuego)" },
+  "León": { icon: "🦁", color: "#facc15", element: "Eléctrico", label: "León (Eléctrico)" },
+  "Junta": { icon: "🏢", color: "#c084fc", element: "Psíquico", label: "Junta (Psíquico)" },
+  "Inquilino": { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" },
+  "Buscavidas": { icon: "💰", color: "#60a5fa", element: "Agua", label: "Buscavidas (Agua)" }
+};
+
+const ELEMENT_ADVANTAGES = {
+  "Mayorista": { "Inquilino": 1.5, "Junta": 0.5 },
+  "León": { "Buscavidas": 1.5, "Mayorista": 0.5 },
+  "Junta": { "Inquilino": 1.5, "Buscavidas": 0.5 },
+  "Inquilino": { "Buscavidas": 1.5, "León": 0.5 },
+  "Buscavidas": { "León": 1.5, "Inquilino": 0.5 }
+};
+
+function openCardDuelLobby() {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) {
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+
+    overlay.style.display = "flex";
+    overlay.style.zIndex = "9999";
+
+    // Cargar mazo guardado localmente
+    try {
+        const savedDeck = localStorage.getItem(`lqsa_card_duel_deck_${uid}`);
+        localCardDuelDeck = savedDeck ? JSON.parse(savedDeck) : [];
+    } catch(e) {
+        localCardDuelDeck = [];
+    }
+
+    // Filtrar únicamente cartas obtenidas del catálogo del usuario
+    const ownedCards = ALBUM_CARDS.filter(card => {
+        const uCard = userAlbumData.cards[card.id];
+        return uCard && uCard.count >= 1;
+    });
+
+    renderCardDuelLobbyHtml(overlay, ownedCards);
+}
+
+function renderCardDuelLobbyHtml(overlay, ownedCards) {
+    const uid = localStorage.getItem('lqsa_user');
+    
+    // Lista de cromos del inventario
+    const inventoryHtml = ownedCards.map(card => {
+        const userCard = userAlbumData.cards[card.id] || { level: 1, signed: false };
+        const level = userCard.level || 1;
+        const signed = !!userCard.signed;
+        const inDeck = localCardDuelDeck.includes(card.id);
+        const lType = LQSA_TYPES[card.combatType || "Inquilino"];
+
+        return `
+            <div class="workshop-card-item" style="border:1px solid ${inDeck ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.06)'}; background:${inDeck ? 'rgba(220,38,38,0.04)' : 'rgba(255,255,255,0.02)'}; padding: 10px;">
+                <img class="workshop-card-thumb" src="${card.image}" style="width:45px; height:60px; object-fit:cover; border-radius:6px;" onerror="this.src='img/personajes/amador-rivas.webp'">
+                <div class="workshop-card-details" style="text-align:left;">
+                    <h4 class="workshop-card-title" style="font-size:0.95rem; margin:0 0 2px 0;">${card.name}</h4>
+                    <p class="workshop-card-meta" style="font-size:0.75rem; color:#94a3b8; margin:0 0 4px 0;">
+                        <span style="color:${lType.color}; font-weight:bold;">${lType.icon} ${lType.element || 'Planta'} - ${card.combatType || 'Inquilino'}</span> | ${'★'.repeat(level)}${'☆'.repeat(5-level)}
+                    </p>
+                    <div style="font-size:0.72rem; color:#ffd700; font-weight:bold;">❤️ HP Base: ${card.hp} | ⚔️ ATK Base: ${card.atk}</div>
+                </div>
+                <button class="workshop-action-btn" style="background:${inDeck ? '#ef4444' : '#22c55e'}; color:#fff; font-size:0.75rem; padding: 4px 10px;" onclick="toggleCardDuelDeck('${card.id}')">
+                    ${inDeck ? '✕ Quitar' : '➕ Añadir'}
+                </button>
+            </div>
+        `;
+    }).join("");
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container" style="max-width: 900px; width: 95vw; background: radial-gradient(circle at 50% 50%, #1a0e1c 0%, #070308 100%); border: 2px solid rgba(220, 38, 38, 0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; position: relative;">
+        <button class="auth-x" onclick="closeAllModals(); openAlbumUI();" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+        
+        <div style="text-align:left; margin-bottom: 16px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px;">
+          <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.4rem; letter-spacing:1px; margin:0; text-shadow:0 0 15px rgba(220, 38, 38, 0.3);">⚔️ ARENA DE DUELOS DE CARTAS TCG</h2>
+          <p style="color:#94a3b8; font-size:0.95rem; margin:4px 0 0 0;">Configura tu mazo de combate y reta a tus amigos online en un duelo por turnos estilo Pokémon.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:20px; height:50vh; max-height:480px;">
+          
+          <!-- Lado Izquierdo: Selección del Mazo -->
+          <div style="display:flex; flex-direction:column; gap:10px; border-right:1px solid rgba(255,255,255,0.05); padding-right:15px; overflow-y:auto;">
+             <h3 style="color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:1.25rem; margin:0 0 4px 0; display:flex; justify-content:space-between; align-items:center;">
+                <span>🛒 Selecciona tus Vecinos</span>
+                <span style="color:#ef4444; font-size:0.95rem; font-weight:bold;">(${localCardDuelDeck.length}/5 cromos)</span>
+             </h3>
+             <div class="workshop-grid" style="grid-template-columns:1fr; gap:6px; overflow-y:visible;">
+                ${ownedCards.length === 0 ? `
+                   <p style="color:#94a3b8; font-size:0.88rem; text-align:center; padding:30px;">Aún no tienes cromos en tu colección. ¡Abre sobres en la Tienda para empezar!</p>
+                ` : inventoryHtml}
+             </div>
+          </div>
+
+          <!-- Lado Derecho: Lobby / Matchmaking -->
+          <div style="display:flex; flex-direction:column; gap:16px; justify-content:center;">
+             
+             <!-- Tabla de Ventajas Elementales -->
+             <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px; font-size:0.75rem; text-align:left;">
+                <div style="color:#ef4444; font-weight:bold; margin-bottom:6px; font-size:0.85rem; font-family:'Barlow Condensed',sans-serif;">📋 CLASES Y VENTAJAS ELEMENTALES (x1.5 Daño)</div>
+                <div style="display:grid; grid-template-columns: 1fr; gap:3px; color:#cbd5e1; line-height:1.3;">
+                  <div>🦀 <strong>Mayorista</strong> vence a 🏠 Inquilino</div>
+                  <div>🦁 <strong>León</strong> vence a 💰 Buscavidas</div>
+                  <div>🏢 <strong>Junta</strong> vence a 🏠 Inquilino</div>
+                  <div>🏠 <strong>Inquilino</strong> vence a 💰 Buscavidas</div>
+                  <div>💰 <strong>Buscavidas</strong> vence a 🦁 León</div>
+                </div>
+             </div>
+
+             <!-- Acciones de Duelo -->
+             <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:12px;">
+                
+                <!-- Apuesta de Monedas -->
+                <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
+                   <label style="font-family:'Barlow Condensed',sans-serif; color:#ffd700; font-size:0.9rem; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                       <span>🪙 APUESTA DE MONEDAS:</span>
+                       <span style="font-size:0.75rem; color:#94a3b8;">Tus Monedas: ${userAlbumData.coins}</span>
+                   </label>
+                   <input type="number" id="card-duel-bet-input" value="100" min="100" max="${userAlbumData.coins}" step="10" style="background:rgba(0,0,0,0.3); border:1px solid rgba(240,192,32,0.3); border-radius:8px; color:#ffd700; padding:8px 12px; font-size:1rem; font-weight:bold; outline:none; font-family:monospace; width:100%; box-sizing:border-box;">
+                </div>
+
+                <button class="workshop-action-btn" style="background:linear-gradient(135deg, #ef4444, #991b1b); color:#fff; font-size:1.05rem; padding:10px;" onclick="createCardDuelRoom()">
+                    ⚔️ Crear Sala de Combate
+                </button>
+
+                <div style="display:flex; align-items:center; gap:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                   <input type="text" id="card-duel-code-input" placeholder="Código de Sala..." style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:8px 12px; font-size:0.85rem; font-family:monospace; width:60%; outline:none;">
+                   <button class="workshop-action-btn" style="background:#4b5563; color:#fff; font-size:0.85rem; padding:8px 12px; width:40%;" onclick="joinCardDuelRoom(document.getElementById('card-duel-code-input').value)">
+                       🗝️ Unirse
+                   </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    `;
+}
+
+function toggleCardDuelDeck(cardId) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const idx = localCardDuelDeck.indexOf(cardId);
+    if (idx !== -1) {
+        localCardDuelDeck.splice(idx, 1);
+    } else {
+        if (localCardDuelDeck.length >= 5) {
+            if (window.showLqsaAlert) showLqsaAlert("¡Mazo lleno! El mazo de combate TCG admite un máximo de 5 cartas.", "LÍMITE ALCANZADO", "warning");
+            else alert("Mazo lleno (máximo 5 cartas).");
+            return;
+        }
+        localCardDuelDeck.push(cardId);
+    }
+
+    localStorage.setItem(`lqsa_card_duel_deck_${uid}`, JSON.stringify(localCardDuelDeck));
+    openCardDuelLobby();
+}
+
+async function createCardDuelRoom() {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid || localCardDuelDeck.length === 0) {
+        if (window.showLqsaAlert) showLqsaAlert("Debes elegir al menos 1 carta para tu mazo de combate.", "MAZO VACÍO", "error");
+        else alert("Debes seleccionar al menos una carta.");
+        return;
+    }
+
+    if (userAlbumData.coins < 100) {
+        if (window.showLqsaAlert) showLqsaAlert("Necesitas tener al menos 100 monedas para participar en un duelo (apuesta mínima de 100 monedas).", "APUESTA MÍNIMA REQUERIDA", "error");
+        else alert("Necesitas al menos 100 monedas.");
+        return;
+    }
+
+    const betInput = document.getElementById("card-duel-bet-input");
+    let betAmount = betInput ? parseInt(betInput.value) : 100;
+    if (isNaN(betAmount) || betAmount < 100) betAmount = 100;
+
+    if (userAlbumData.coins < betAmount) {
+        if (window.showLqsaAlert) showLqsaAlert(`No tienes suficientes monedas para realizar una apuesta de ${betAmount} monedas.`, "MONEDAS INSUFICIENTES", "error");
+        else alert("No tienes suficientes monedas.");
+        return;
+    }
+
+    const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const db = firebase.database();
+
+    let myProfile = { username: "Vecino", avatar: "img/personajes/amador-rivas.webp" };
+    if (typeof currentUserProfile !== 'undefined' && currentUserProfile) {
+        myProfile = currentUserProfile;
+    } else {
+        const snap = await db.ref(`users/${uid}`).once('value');
+        if (snap.exists()) myProfile = snap.val();
+    }
+
+    const initialRoomState = {
+        code: roomCode,
+        creator: uid,
+        status: "waiting",
+        bet: betAmount,
+        players: {
+            [uid]: {
+                uid: uid,
+                username: myProfile.username,
+                avatar: myProfile.avatar || "img/personajes/amador-rivas.webp",
+                ready: false,
+                deckSize: localCardDuelDeck.length
+            }
+        },
+        logs: ["¡Creada sala de duelos de cartas " + roomCode + " con apuesta de " + betAmount + " 🪙!"],
+        ts: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    await db.ref(`card_duels/${roomCode}`).set(initialRoomState);
+    
+    // Asignar variables globales de sala para soporte del panel de amigos
+    window._duelRoomCode = roomCode;
+    window._roomCode = roomCode;
+    window._isCardDuel = true;
+
+    listenToCardDuelRoom(roomCode);
+}
+
+async function joinCardDuelRoom(roomCode) {
+    roomCode = roomCode.trim().toUpperCase();
+    if (!roomCode) return;
+
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    // Cargar mazo guardado localmente si está vacío en memoria
+    if (!localCardDuelDeck || localCardDuelDeck.length === 0) {
+        try {
+            const savedDeck = localStorage.getItem(`lqsa_card_duel_deck_${uid}`);
+            localCardDuelDeck = savedDeck ? JSON.parse(savedDeck) : [];
+        } catch(e) {
+            localCardDuelDeck = [];
+        }
+    }
+
+    // Auto-asignación de seguridad si el mazo sigue vacío
+    if (localCardDuelDeck.length === 0) {
+        const ownedCards = ALBUM_CARDS.filter(card => {
+            const uCard = userAlbumData.cards[card.id];
+            return uCard && uCard.count >= 1;
+        });
+        if (ownedCards.length > 0) {
+            localCardDuelDeck = ownedCards.slice(0, 5).map(c => c.id);
+            localStorage.setItem(`lqsa_card_duel_deck_${uid}`, JSON.stringify(localCardDuelDeck));
+        }
+    }
+
+    if (localCardDuelDeck.length === 0) {
+        if (window.showLqsaAlert) showLqsaAlert("Elige al menos 1 carta de combate en tu mazo antes de unirte.", "MAZO VACÍO", "error");
+        else alert("Escribe tu mazo de combate primero.");
+        return;
+    }
+
+    const db = firebase.database();
+    const snap = await db.ref(`card_duels/${roomCode}`).once('value');
+    if (!snap.exists()) {
+        if (window.showLqsaAlert) showLqsaAlert("No existe ninguna sala de combate con este código.", "SALA INEXISTENTE", "error");
+        else alert("Sala inexistente.");
+        return;
+    }
+
+    const room = snap.val();
+    const bet = room.bet || 0;
+    if (userAlbumData.coins < bet) {
+        if (window.showLqsaAlert) showLqsaAlert(`No tienes suficientes monedas para entrar a esta sala. Se requiere una apuesta de ${bet} monedas.`, "APUESTA INSUFICIENTE", "error");
+        else alert(`Se requiere apuesta de ${bet} monedas.`);
+        return;
+    }
+
+    if (room.status !== "waiting" && !room.players[uid]) {
+        if (window.showLqsaAlert) showLqsaAlert("La sala de combate ya está llena o ha comenzado.", "SALA LLENA", "error");
+        else alert("Sala llena.");
+        return;
+    }
+
+    let myProfile = { username: "Vecino", avatar: "img/personajes/amador-rivas.webp" };
+    if (typeof currentUserProfile !== 'undefined' && currentUserProfile) {
+        myProfile = currentUserProfile;
+    } else {
+        const userSnap = await db.ref(`users/${uid}`).once('value');
+        if (userSnap.exists()) myProfile = userSnap.val();
+    }
+
+    // Unirse a la sala
+    await db.ref(`card_duels/${roomCode}/players/${uid}`).set({
+        uid: uid,
+        username: myProfile.username,
+        avatar: myProfile.avatar || "img/personajes/amador-rivas.webp",
+        ready: false,
+        deckSize: localCardDuelDeck.length
+    });
+
+    await db.ref(`card_duels/${roomCode}/status`).set("choosing_decks");
+    await db.ref(`card_duels/${roomCode}/logs`).push("¡" + myProfile.username + " se ha unido al combate! Prepárense.");
+
+    window._duelRoomCode = roomCode;
+    window._roomCode = roomCode;
+    window._isCardDuel = true;
+
+    listenToCardDuelRoom(roomCode);
+}
+
+function listenToCardDuelRoom(roomCode) {
+    const db = firebase.database();
+    const uid = localStorage.getItem('lqsa_user');
+
+    if (cardDuelRoomListener) {
+        db.ref(`card_duels/${roomCode}`).off('value', cardDuelRoomListener);
+    }
+
+    cardDuelRoomListener = db.ref(`card_duels/${roomCode}`).on('value', snap => {
+        const room = snap.val();
+        if (!room) return;
+
+        renderCardDuelRoomState(room);
+    });
+}
+
+function renderCardDuelRoomState(room) {
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+
+    const uid = localStorage.getItem('lqsa_user');
+    const db = firebase.database();
+
+    if (room.status === "waiting") {
+        overlay.innerHTML = `
+          <div class="tcg-shop-container" style="max-width: 500px; width: 95vw; background:#080515; border: 2px solid rgba(220, 38, 38, 0.4); border-radius: 24px; padding: 30px; box-sizing: border-box; text-align:center;">
+             <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.2rem; letter-spacing:1px; margin:0 0 10px 0;">⚔️ SALA DE RETO CREADA</h2>
+             <div style="font-size:2.5rem; font-family:monospace; color:#ffd700; font-weight:bold; letter-spacing:4px; margin:16px 0; background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                ${room.code}
+             </div>
+             <p style="color:#cbd5e1; font-size:0.95rem; margin:0 0 20px 0; line-height:1.4;">Envía este código de sala a tu amigo, o abre el panel de amigos a la derecha e invítalo de forma directa.</p>
+             <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="workshop-action-btn" style="background:#4b5563; color:#fff;" onclick="openFriendsPanel()">
+                    👥 Abrir Lista de Amigos
+                </button>
+                <button class="workshop-action-btn" style="background:#ef4444; color:#fff;" onclick="abandonCardDuelRoom('${room.code}')">
+                    ✕ Cancelar Reto
+                </button>
+             </div>
+          </div>
+        `;
+    } else if (room.status === "choosing_decks") {
+        const pUids = Object.keys(room.players);
+        const myReady = room.players[uid] ? !!room.players[uid].ready : false;
+        
+        const opponentUid = pUids.find(id => id !== uid);
+        const opponentReady = opponentUid ? !!room.players[opponentUid].ready : false;
+        const opponentName = opponentUid ? room.players[opponentUid].username : "Rival";
+
+        overlay.innerHTML = `
+          <div class="tcg-shop-container" style="max-width: 550px; width: 95vw; background:#0c091f; border: 2px solid rgba(220, 38, 38, 0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; text-align:center;">
+             <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.2rem; letter-spacing:1px; margin:0 0 6px 0;">⚔️ PREPARACIÓN DEL COMBATE</h2>
+             <p style="color:#94a3b8; font-size:0.88rem; margin:0 0 20px 0;">Ambos jugadores deben confirmar sus mazos de duelo. Los tamaños de mazo deben coincidir exactamente.</p>
+
+             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:24px;">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid ${myReady ? '#4ade80':'rgba(255,255,255,0.06)'}; border-radius:12px; padding:15px;">
+                   <div style="font-size:0.85rem; color:#94a3b8;">Tu Estado:</div>
+                   <div style="font-size:1.15rem; font-weight:bold; color:${myReady ? '#4ade80' : '#ffd700'}; margin:6px 0;">${myReady ? '✓ LISTO' : '⚡ Eligiendo...'}</div>
+                   <div style="font-size:0.8rem; color:#60a5fa;">Mazo: ${localCardDuelDeck.length} cartas</div>
+                </div>
+
+                <div style="background:rgba(255,255,255,0.02); border:1px solid ${opponentReady ? '#4ade80':'rgba(255,255,255,0.06)'}; border-radius:12px; padding:15px;">
+                   <div style="font-size:0.85rem; color:#94a3b8;">${opponentName}:</div>
+                   <div style="font-size:1.15rem; font-weight:bold; color:${opponentReady ? '#4ade80' : '#ffd700'}; margin:6px 0;">${opponentReady ? '✓ LISTO' : '⚡ Eligiendo...'}</div>
+                   <div style="font-size:0.8rem; color:#60a5fa;">Mazo: ${opponentUid ? room.players[opponentUid].deckSize : '?'} cartas</div>
+                </div>
+             </div>
+
+             <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="workshop-action-btn" style="background:${myReady ? '#15803d' : '#ef4444'}; color:#fff; font-size:1.05rem; padding:10px 24px;" ${myReady ? 'disabled' : ''} onclick="submitCardDuelDeck('${room.code}')">
+                    ${myReady ? '✓ Confirmado' : '🔥 ¡Estoy Listo!'}
+                </button>
+                <button class="workshop-action-btn" style="background:#4b5563; color:#fff;" onclick="abandonCardDuelRoom('${room.code}')">
+                    ✕ Salir
+                </button>
+             </div>
+          </div>
+        `;
+    } else if (room.status === "fighting") {
+        renderCardBattleScreen(room);
+    } else if (room.status === "finished") {
+        renderCardBattleResultScreen(room);
+    }
+}
+
+async function submitCardDuelDeck(roomCode) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid || localCardDuelDeck.length === 0) return;
+
+    const db = firebase.database();
+    
+    // Mapear y escalar mazo de combate TCG
+    const mappedDeck = localCardDuelDeck.map(cardId => {
+        const card = ALBUM_CARDS.find(c => c.id === cardId);
+        const userCard = userAlbumData.cards[cardId] || { level: 1, signed: false };
+        
+        const level = userCard.level || 1;
+        const signed = !!userCard.signed;
+        const levelMultiplier = 1 + (level - 1) * 0.15;
+        const signedMultiplier = signed ? 1.3 : 1.0;
+        
+        const maxHp = Math.round((card.hp || 100) * levelMultiplier * signedMultiplier);
+        const atk = Math.round((card.atk || 40) * levelMultiplier * signedMultiplier);
+        const def = Math.round((card.def || 30) * levelMultiplier * signedMultiplier);
+
+        const scaledAttacks = (card.attacks || []).map(atkObj => ({
+            name: atkObj.name,
+            desc: atkObj.desc,
+            power: Math.round(atkObj.power * levelMultiplier * signedMultiplier)
+        }));
+
+        return {
+            id: cardId,
+            name: card.name,
+            image: card.image,
+            maxHp: maxHp,
+            hp: maxHp,
+            atk: atk,
+            def: def,
+            level: level,
+            signed: signed,
+            combatType: card.combatType || "Inquilino",
+            attacks: scaledAttacks
+        };
+    });
+
+    const roomRef = db.ref(`card_duels/${roomCode}`);
+    await roomRef.child(`players/${uid}/deck`).set(mappedDeck);
+    await roomRef.child(`players/${uid}/ready`).set(true);
+
+    // Verificar si ambos están listos
+    const snap = await roomRef.once('value');
+    const room = snap.val();
+    const pUids = Object.keys(room.players);
+    if (pUids.length === 2) {
+        const p1 = pUids[0];
+        const p2 = pUids[1];
+
+        if (room.players[p1].ready && room.players[p2].ready) {
+            const size1 = room.players[p1].deck.length;
+            const size2 = room.players[p2].deck.length;
+
+            if (size1 === size2) {
+                // Iniciar combate
+                const battleState = {
+                    status: "fighting",
+                    turn: room.creator,
+                    activeCards: {
+                        [p1]: 0,
+                        [p2]: 0
+                    },
+                    logs: ["¡El combate ha comenzado! Turno de " + room.players[room.creator].username]
+                };
+                await roomRef.update(battleState);
+            } else {
+                // Desemparejar listos por discrepancia de tamaño de mazo
+                await roomRef.child(`players/${p1}/ready`).set(false);
+                await roomRef.child(`players/${p2}/ready`).set(false);
+                await roomRef.child(`logs`).push("¡Mazos desiguales! Ambos jugadores deben tener el mismo número de cartas.");
+                
+                if (window.showLqsaAlert) {
+                    showLqsaAlert("¡Los mazos deben ser del mismo tamaño! Ajustad vuestras selecciones.", "TAMAÑOS INCOMPATIBLES", "error");
+                }
+            }
+        }
+    }
+}
+
+async function abandonCardDuelRoom(roomCode) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const db = firebase.database();
+    const roomRef = db.ref(`card_duels/${roomCode}`);
+    const snap = await roomRef.once('value');
+    if (!snap.exists()) return;
+
+    const room = snap.val();
+    if (room.creator === uid) {
+        // Eliminar sala si el creador abandona
+        await roomRef.remove();
+    } else {
+        // Quitar de lista de jugadores y restablecer estado de espera
+        await roomRef.child(`players/${uid}`).remove();
+        await roomRef.child(`status`).set("waiting");
+    }
+
+    if (cardDuelRoomListener) {
+        db.ref(`card_duels/${roomCode}`).off('value', cardDuelRoomListener);
+        cardDuelRoomListener = null;
+    }
+
+    window._duelRoomCode = null;
+    window._roomCode = null;
+    window._isCardDuel = false;
+
+    openCardDuelLobby();
+}
+
+async function surrenderCardDuel(roomCode) {
+    if (!confirm("¿Seguro que quieres rendirte y perder la apuesta de monedas?")) return;
+
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const db = firebase.database();
+    const roomRef = db.ref(`card_duels/${roomCode}`);
+
+    await roomRef.transaction(room => {
+        if (!room || room.status !== "fighting") return room;
+
+        const pUids = Object.keys(room.players);
+        const opponentUid = pUids.find(id => id !== uid);
+
+        room.status = "finished";
+        room.winner = opponentUid;
+        
+        const bet = parseInt(room.bet) || 0;
+        const extraReward = 50;
+        
+        if (!room.logs) room.logs = [];
+        room.logs.push("🏳️ ¡" + room.players[uid].username + " se ha rendido! Victoria para " + room.players[opponentUid].username + ". Recibe 🪙 +" + (bet + extraReward) + " Monedas.");
+        
+        const winnerUid = opponentUid;
+        const loserUid = uid;
+
+        // Transacción para el ganador: se lleva apuesta + bono de 50
+        db.ref(`users/${winnerUid}/coins`).transaction(currentCoins => (currentCoins || 0) + bet + extraReward);
+        if (typeof progressMission === 'function') {
+            progressMission(winnerUid, "win_duel", 1); // Registrar en la progresión de misiones
+        }
+
+        // Transacción para el perdedor: pierde las monedas de la apuesta
+        db.ref(`users/${loserUid}/coins`).transaction(currentCoins => Math.max(0, (currentCoins || 0) - bet));
+
+        return room;
+    });
+}
+
+function renderCardBattleScreen(room) {
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+
+    const uid = localStorage.getItem('lqsa_user');
+    const myUid = uid;
+    const pUids = Object.keys(room.players);
+    const opponentUid = pUids.find(id => id !== myUid);
+
+    const me = room.players[myUid];
+    const opp = room.players[opponentUid];
+
+    const myActiveIdx = room.activeCards[myUid];
+    const oppActiveIdx = room.activeCards[opponentUid];
+
+    const myActiveCard = me.deck[myActiveIdx];
+    const oppActiveCard = opp.deck[oppActiveIdx];
+
+    const isMyTurn = room.turn === myUid;
+    const logList = room.logs || [];
+    const recentLogs = logList.slice(-4).reverse();
+
+    // Renderizar Elementos
+    const myType = LQSA_TYPES[myActiveCard.combatType || "Inquilino"];
+    const oppType = LQSA_TYPES[oppActiveCard.combatType || "Inquilino"];
+
+    // Porcentaje de vida HP
+    const myHpPct = Math.round((myActiveCard.hp / myActiveCard.maxHp) * 100);
+    const oppHpPct = Math.round((oppActiveCard.hp / oppActiveCard.maxHp) * 100);
+
+    // Listado de cromos en la reserva del banquillo
+    const benchHtml = me.deck.map((card, idx) => {
+        if (idx === myActiveIdx) return '';
+        const alive = card.hp > 0;
+        return `
+            <div class="bench-item ${alive ? '' : 'defeated'}" onclick="${alive && isMyTurn ? `switchCardDuelActive('${room.code}', ${idx})` : ''}" style="border: 1px solid ${alive ? 'rgba(255,255,255,0.1)' : '#ef4444'}; opacity:${alive ? 1 : 0.4}; cursor:${alive && isMyTurn ? 'pointer' : 'not-allowed'}; padding:4px; border-radius:6px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.65rem; width:45px; position:relative;">
+                <img src="${card.image}" style="width:30px; height:40px; object-fit:cover; border-radius:3px;">
+                <div style="font-weight:bold; color:#f87171;">${card.hp}/${card.maxHp}</div>
+                ${!alive ? '<div style="position:absolute; inset:0; background:rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:0.75rem; border-radius:6px;">💀</div>' : ''}
+            </div>
+        `;
+    }).join("");
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container card-duel-battlefield" style="max-width: 900px; width: 95vw; background: radial-gradient(circle at 50% 50%, #0d0a21 0%, #030208 100%); border: 2px solid rgba(220, 38, 38, 0.5); border-radius: 24px; padding: 20px; box-sizing: border-box; display:flex; flex-direction:column; gap:12px; justify-content:space-between; position:relative;">
+        
+        <!-- Cabecera del Combate -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+           <div style="display:flex; align-items:center; gap:10px;">
+               <span style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:1.6rem; letter-spacing:1px;">⚔️ BATALLA DE VECINOS TCG</span>
+               <span style="background:rgba(240,192,32,0.15); border:1px solid rgba(240,192,32,0.4); color:#ffd700; font-size:0.78rem; padding:2px 8px; border-radius:20px; font-weight:bold;">💰 APUESTA: ${room.bet || 0} 🪙</span>
+           </div>
+           <div style="display:flex; align-items:center; gap:8px;">
+               <span style="background:${isMyTurn ? '#22c55e' : '#4b5563'}; color:#fff; font-size:0.8rem; padding: 4px 10px; border-radius:30px; font-weight:bold; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.8px;">
+                   ${isMyTurn ? '⚡ TU TURNO' : '⏳ TURNO DEL RIVAL'}
+               </span>
+               <button class="workshop-action-btn" style="background:#ef4444; color:#fff; font-size:0.78rem; padding: 4px 10px; margin: 0; font-family:'Barlow Condensed',sans-serif; font-weight:bold; border-radius:30px; border:1px solid rgba(255,255,255,0.1);" onclick="surrenderCardDuel('${room.code}')">🏳️ Rendirse</button>
+           </div>
+        </div>
+
+        <!-- Escenario Principal (Combate Pokémon) -->
+        <div style="display:flex; flex-direction:column; gap:16px; flex:1; justify-content:center;">
+           
+           <!-- Lado Superior: Carta Enemiga -->
+           <div style="display:flex; align-items:center; justify-content:flex-end; gap:20px; padding: 10px 30px;">
+              
+              <!-- Info de Vida Enemiga -->
+              <div style="text-align:right; width: 240px;">
+                 <div style="font-weight:bold; font-size:1.05rem; display:flex; justify-content:flex-end; gap:8px; align-items:center;">
+                    <span>${oppActiveCard.name}</span>
+                    <span style="background:${oppType.color}; font-size:0.7rem; padding:2px 6px; border-radius:4px; color:#fff;">${oppType.icon} ${oppType.element || 'Planta'} - ${oppActiveCard.combatType}</span>
+                 </div>
+                 <div style="font-size:0.75rem; color:#94a3b8; margin: 2px 0 4px 0;">Nivel ${'★'.repeat(oppActiveCard.level)} ${oppActiveCard.signed ? '✒️ FIRMADA' : ''}</div>
+                 <div style="width:100%; height:10px; background:rgba(255,255,255,0.08); border-radius:30px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
+                    <div style="width:${oppHpPct}%; height:100%; background:${oppHpPct > 50 ? '#22c55e' : (oppHpPct > 20 ? '#eab308' : '#ef4444')}; transition:all 0.3s;"></div>
+                 </div>
+                 <div style="font-size:0.78rem; font-family:monospace; font-weight:bold; margin-top:2px; color:#ef4444;">❤️ HP: ${oppActiveCard.hp}/${oppActiveCard.maxHp}</div>
+              </div>
+
+              <!-- Retrato Enemigo -->
+              <div style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${oppType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                 <img src="${oppActiveCard.image}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src='img/personajes/amador-rivas.webp'">
+              </div>
+           </div>
+
+           <!-- Lado Inferior: Carta Jugador -->
+           <div style="display:flex; align-items:center; justify-content:flex-start; gap:20px; padding: 10px 30px; border-top: 1px solid rgba(255,255,255,0.02);">
+              
+              <!-- Retrato Jugador -->
+              <div style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${myType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                 <img src="${myActiveCard.image}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src='img/personajes/amador-rivas.webp'">
+              </div>
+
+              <!-- Info de Vida Jugador -->
+              <div style="text-align:left; width: 240px;">
+                 <div style="font-weight:bold; font-size:1.05rem; display:flex; gap:8px; align-items:center;">
+                    <span>${myActiveCard.name}</span>
+                    <span style="background:${myType.color}; font-size:0.7rem; padding:2px 6px; border-radius:4px; color:#fff;">${myType.icon} ${myType.element || 'Planta'} - ${myActiveCard.combatType}</span>
+                 </div>
+                 <div style="font-size:0.75rem; color:#94a3b8; margin: 2px 0 4px 0;">Nivel ${'★'.repeat(myActiveCard.level)} ${myActiveCard.signed ? '✒️ FIRMADA' : ''}</div>
+                 <div style="width:100%; height:10px; background:rgba(255,255,255,0.08); border-radius:30px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
+                    <div style="width:${myHpPct}%; height:100%; background:${myHpPct > 50 ? '#22c55e' : (myHpPct > 20 ? '#eab308' : '#ef4444')}; transition:all 0.3s;"></div>
+                 </div>
+                 <div style="font-size:0.78rem; font-family:monospace; font-weight:bold; margin-top:2px; color:#4ade80;">❤️ HP: ${myActiveCard.hp}/${myActiveCard.maxHp}</div>
+              </div>
+           </div>
+        </div>
+
+        <!-- Consola de Logs e Interacción de Turno -->
+        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:16px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:15px;">
+           
+           <!-- Consola de Historial de Ataques -->
+           <div class="battle-logs-console" style="text-align:left; font-family:monospace; border-radius:10px; background:rgba(0,0,0,0.3); padding:8px 12px; height:100px; overflow-y:auto; font-size:0.78rem; border:1px solid rgba(255,255,255,0.04); display:flex; flex-direction:column; gap:4px;">
+              ${recentLogs.map((log, index) => {
+                  let color = "#cbd5e1";
+                  if (log.includes("Súper Efectivo")) color = "#ffd700";
+                  else if (log.includes("derrotado")) color = "#f87171";
+                  else if (log.includes("ganado")) color = "#4ade80";
+                  return `<div style="color:${color}; opacity:${index === 0 ? 1 : 0.65}; font-weight:${index === 0 ? 'bold' : 'normal'};">> ${log}</div>`;
+              }).join("")}
+           </div>
+
+           <!-- Acciones de Combate: Ataques o Banquillo -->
+           <div style="display:flex; flex-direction:column; gap:8px;">
+              
+              <!-- Ataques Disponibles -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                 ${(myActiveCard.attacks || []).map((atk, idx) => {
+                     return `
+                         <button class="workshop-action-btn" style="background:linear-gradient(135deg, #ef4444, #991b1b); color:#fff; font-size:0.85rem; padding:8px; line-height:1.2; text-align:left;" ${!isMyTurn || myActiveCard.hp <= 0 ? 'disabled' : ''} onclick="executeCardDuelAttack('${room.code}', ${idx})">
+                             <div style="font-weight:bold; font-family:'Barlow Condensed',sans-serif; font-size:0.95rem;">💥 ${atk.name}</div>
+                             <div style="font-size:0.7rem; color:#ffd700;">Daño: ${atk.power} ATK</div>
+                         </button>
+                     `;
+                 }).join("")}
+              </div>
+
+              <!-- Reserva del Banquillo (Click to Swap) -->
+              <div style="display:flex; align-items:center; gap:6px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px; margin-top:2px;">
+                 <span style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">🔄 Banquillo:</span>
+                 <div style="display:flex; gap:6px;">
+                    ${benchHtml || '<span style="font-size:0.7rem; color:#64748b;">Mazo vacío.</span>'}
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    `;
+
+    // Si la carta activa actual está muerta y es mi turno, forzar cambio de carta bloqueando ataques
+    if (myActiveCard.hp <= 0) {
+        // Encontrar primera carta consciente
+        const nextAliveIdx = me.deck.findIndex(c => c.hp > 0);
+        if (nextAliveIdx !== -1) {
+            // Forzar reemplazo automático inmediato
+            switchCardDuelActive(room.code, nextAliveIdx);
+        }
+    }
+}
+
+async function executeCardDuelAttack(roomCode, attackIndex) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const db = firebase.database();
+    const roomRef = db.ref(`card_duels/${roomCode}`);
+    
+    await roomRef.transaction(room => {
+        if (!room || room.status !== "fighting" || room.turn !== uid) return room;
+
+        const pUids = Object.keys(room.players);
+        const opponentUid = pUids.find(id => id !== uid);
+
+        const me = room.players[uid];
+        const opp = room.players[opponentUid];
+
+        const myActiveIdx = room.activeCards[uid];
+        const oppActiveIdx = room.activeCards[opponentUid];
+
+        const myCard = me.deck[myActiveIdx];
+        const oppCard = opp.deck[oppActiveIdx];
+
+        if (myCard.hp <= 0 || oppCard.hp <= 0) return room;
+
+        const attack = myCard.attacks[attackIndex];
+        const baseDmg = attack.power;
+
+        // Calcular ventajas elementales
+        let mult = 1.0;
+        const attType = myCard.combatType || "Inquilino";
+        const oppType = oppCard.combatType || "Inquilino";
+        
+        if (ELEMENT_ADVANTAGES[attType] && ELEMENT_ADVANTAGES[attType][oppType] !== undefined) {
+            mult = ELEMENT_ADVANTAGES[attType][oppType];
+        }
+
+        // Reducción por Defensa
+        const defRed = 1 - (oppCard.def / 350);
+        let finalDmg = Math.round(baseDmg * mult * defRed);
+        if (finalDmg < 10) finalDmg = 10;
+
+        // Aplicar daño
+        oppCard.hp = Math.max(0, oppCard.hp - finalDmg);
+
+        // Registro de log
+        let logMsg = "¡" + myCard.name.split(' ')[0] + " usó " + attack.name + "! Hizo " + finalDmg + " de daño a " + oppCard.name.split(' ')[0] + ".";
+        if (mult > 1.0) logMsg += " 💥 ¡Súper Efectivo!";
+        if (mult < 1.0) logMsg += " 🛡️ No es muy efectivo...";
+
+        if (oppCard.hp <= 0) {
+            logMsg += " 💀 ¡" + oppCard.name.split(' ')[0] + " derrotado/a!";
+        }
+
+        if (!room.logs) room.logs = [];
+        room.logs.push(logMsg);
+
+        // Comprobar si el oponente ha perdido todas sus cartas
+        const anyAlive = opp.deck.some(c => c.hp > 0);
+        if (!anyAlive) {
+            room.status = "finished";
+            room.winner = uid;
+            const bet = parseInt(room.bet) || 0;
+            const extraReward = 50;
+            room.logs.push("🏆 ¡" + me.username + " ha ganado el duelo de cartas! Recibe 🪙 +" + (bet + extraReward) + " Monedas (Apuesta + Bono)");
+            
+            const winnerUid = uid;
+            const loserUid = opponentUid;
+
+            // Transacción para el ganador: se lleva apuesta + bono de 50
+            db.ref(`users/${winnerUid}/coins`).transaction(currentCoins => (currentCoins || 0) + bet + extraReward);
+            if (typeof progressMission === 'function') {
+                progressMission(winnerUid, "win_duel", 1); // Registrar en la progresión de misiones
+            }
+
+            // Transacción para el perdedor: pierde las monedas de la apuesta
+            db.ref(`users/${loserUid}/coins`).transaction(currentCoins => Math.max(0, (currentCoins || 0) - bet));
+
+            return room;
+        }
+
+        // Si la carta del oponente murió, forzar auto-switch a la primera viva
+        if (oppCard.hp <= 0) {
+            const nextAliveIdx = opp.deck.findIndex(c => c.hp > 0);
+            if (nextAliveIdx !== -1) {
+                room.activeCards[opponentUid] = nextAliveIdx;
+                room.logs.push("🔄 ¡" + opp.username + " envía a " + opp.deck[nextAliveIdx].name.split(' ')[0] + " al combate!");
+            }
+        }
+
+        // Cambiar turno
+        room.turn = opponentUid;
+        return room;
+    });
+}
+
+async function switchCardDuelActive(roomCode, benchIndex) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+
+    const db = firebase.database();
+    const roomRef = db.ref(`card_duels/${roomCode}`);
+
+    await roomRef.transaction(room => {
+        if (!room || room.status !== "fighting" || room.turn !== uid) return room;
+
+        const me = room.players[uid];
+        const nextCard = me.deck[benchIndex];
+
+        if (!nextCard || nextCard.hp <= 0) return room;
+
+        const oldCard = me.deck[room.activeCards[uid]];
+
+        room.activeCards[uid] = benchIndex;
+        
+        if (!room.logs) room.logs = [];
+        room.logs.push("🔄 " + me.username + " retira a " + oldCard.name.split(' ')[0] + " y saca a " + nextCard.name.split(' ')[0] + "!");
+
+        // Cambiar turno
+        const pUids = Object.keys(room.players);
+        const opponentUid = pUids.find(id => id !== uid);
+        room.turn = opponentUid;
+
+        return room;
+    });
+}
+
+function renderCardBattleResultScreen(room) {
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+
+    const uid = localStorage.getItem('lqsa_user');
+    const db = firebase.database();
+    const isWinner = room.winner === uid;
+    const bet = parseInt(room.bet) || 0;
+    const extraReward = 50;
+    
+    // Mostrar aviso emergente de pérdida o victoria estilo LQSA en ambos clientes
+    if (!window._duelResultAlertShown || window._duelResultAlertShown !== room.code) {
+        window._duelResultAlertShown = room.code;
+        setTimeout(() => {
+            if (isWinner) {
+                if (window.showLqsaAlert) {
+                    showLqsaAlert(`¡Enhorabuena! Has ganado el duelo: +${bet + extraReward} monedas (apuesta de ${bet} + 50 de bono de victoria).`, "¡VICTORIA VECINAL!", "success");
+                }
+            } else {
+                if (window.showLqsaAlert) {
+                    showLqsaAlert(`¡Has perdido el combate! Se te han restado ${bet} monedas de la apuesta de tu cuenta.`, "¡DERROTA VECINAL!", "error");
+                }
+            }
+        }, 300);
+    }
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container" style="max-width: 500px; width: 95vw; background:#080515; border: 2px solid ${isWinner ? '#4ade80':'#ef4444'}; border-radius: 24px; padding: 30px; box-sizing: border-box; text-align:center;">
+         <div style="font-size:4rem; margin-bottom:12px;">${isWinner ? '🏆' : '💀'}</div>
+         <h2 style="font-family:'Bebas Neue',sans-serif; color:${isWinner ? '#4ade80':'#ef4444'}; font-size:2.6rem; letter-spacing:1px; margin:0 0 10px 0;">
+             ${isWinner ? '¡VICTORIA VECINAL!' : '¡DERROTA COMUNITARIA!'}
+         </h2>
+         <p style="color:#cbd5e1; font-size:0.95rem; margin:0 0 20px 0; line-height:1.4;">
+             ${isWinner ? 'Has derrotado al mazo del rival con maestría. La Junta de Propietarios te recompensa con creces.' : 'Tus vecinos han caído desquiciados. ¡Sube sus niveles de desquicie y dales autógrafos para la próxima!'}
+         </p>
+         
+         ${isWinner ? `
+            <div style="background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); border-radius:12px; padding:15px; margin-bottom:20px;">
+               <div style="font-size:0.85rem; color:#4ade80; font-weight:bold;">🪙 RECOMPENSA DE DUELO</div>
+               <div style="font-size:1.8rem; font-family:'Bebas Neue',sans-serif; color:#ffd700; margin-top:4px;">+${bet + extraReward} MONEDAS</div>
+               <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">(Apuesta de ${bet} + Bono de victoria de ${extraReward})</div>
+            </div>
+         ` : `
+            <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:15px; margin-bottom:20px;">
+               <div style="font-size:0.85rem; color:#ef4444; font-weight:bold;">💀 APUESTA PERDIDA</div>
+               <div style="font-size:1.8rem; font-family:'Bebas Neue',sans-serif; color:#f87171; margin-top:4px;">-${bet} MONEDAS</div>
+            </div>
+         `}
+
+         <button class="workshop-action-btn" style="background:${isWinner ? '#22c55e':'#ef4444'}; color:#fff; font-size:1.05rem; padding:10px 24px;" onclick="closeAllModals(); openAlbumUI();">
+             ✓ Volver al Álbum
+         </button>
+      </div>
+    `;
+
+    // Limpiar listeners de la sala
+    if (cardDuelRoomListener) {
+        db.ref(`card_duels/${room.code}`).off('value', cardDuelRoomListener);
+        cardDuelRoomListener = null;
+    }
+}

@@ -96,14 +96,14 @@ const ACHIEVEMENTS = [
 function _getTitleFromProfile(profile) {
   const ach = new Set(profile.achievements || []);
   const count = ach.size;
-  if (ach.has('sin_red') && count >= 9)   return '🎯 El Prestidigitador';
+  if (ach.has('sin_red') && count >= 9) return '🎯 El Prestidigitador';
   if (ach.has('racha_5') && ach.has('dios_mode')) return '👑 Leyenda de Montepinar';
-  if (ach.has('dios_mode'))                return '👑 Presidente/a de la Comunidad';
-  if (ach.has('veterano'))                 return '⭐ Vecino Veterano';
-  if (ach.has('domador_ia'))               return '🤖 Domador/a de IAs';
-  if (count >= 6)                          return '🏠 Vecino de Pleno Derecho';
-  if (count >= 4)                          return '🔑 Inquilino/a';
-  if (count >= 2)                          return '🚶 Nuevo Vecino';
+  if (ach.has('dios_mode')) return '👑 Presidente/a de la Comunidad';
+  if (ach.has('veterano')) return '⭐ Vecino Veterano';
+  if (ach.has('domador_ia')) return '🤖 Domador/a de IAs';
+  if (count >= 6) return '🏠 Vecino de Pleno Derecho';
+  if (count >= 4) return '🔑 Inquilino/a';
+  if (count >= 2) return '🚶 Nuevo Vecino';
   return '🔍 Aspirante';
 }
 
@@ -162,16 +162,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (snap.exists()) {
           currentUserProfile = snap.val();
           currentUserProfile.uid = savedUser; // Compatibilidad con vistas
-          
+
           // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
           if (typeof initAlbumSystem === 'function') initAlbumSystem(savedUser);
-          
+
           updateAuthNav();
-          
+
           // Iniciar sistema de presencia y amigos
           if (typeof initPresence === 'function') initPresence(savedUser);
           if (typeof initFriendsSystem === 'function') initFriendsSystem(savedUser);
-          
+
           // Reconectar automáticamente si tiene partida de duelo guardada
           if (typeof checkDuelingRoomReconnection === 'function') {
             checkDuelingRoomReconnection();
@@ -385,22 +385,22 @@ async function handleAuthSubmit() {
 
       // Iniciar sesión
       localStorage.setItem("lqsa_user", userKey);
-      
+
       // Iniciar escucha del perfil
       db.ref("users/" + userKey).on("value", (newSnap) => {
         if (newSnap.exists()) {
           currentUserProfile = newSnap.val();
           currentUserProfile.uid = userKey;
-          
+
           // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
           if (typeof initAlbumSystem === 'function') initAlbumSystem(userKey);
-          
+
           updateAuthNav();
-          
+
           // Iniciar presencia y amigos tras registro
           if (typeof initPresence === 'function') initPresence(userKey);
           if (typeof initFriendsSystem === 'function') initFriendsSystem(userKey);
-          
+
           if (typeof window.onUserProfileLoaded === "function") {
             window.onUserProfileLoaded();
           }
@@ -411,7 +411,7 @@ async function handleAuthSubmit() {
     } else {
       // Login
       let snap = await db.ref("users/" + userKey).once("value");
-      
+
       // Auto-crear cuenta de administrador si no existe en la base de datos
       if (userKey === "admin" && !snap.exists()) {
         const adminProfile = {
@@ -440,16 +440,16 @@ async function handleAuthSubmit() {
       }
 
       localStorage.setItem("lqsa_user", userKey);
-      
+
       // Iniciar escucha
       db.ref("users/" + userKey).on("value", (newSnap) => {
         if (newSnap.exists()) {
           currentUserProfile = newSnap.val();
           currentUserProfile.uid = userKey;
-          
+
           // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
           if (typeof initAlbumSystem === 'function') initAlbumSystem(userKey);
-          
+
           updateAuthNav();
 
           // Iniciar presencia y amigos tras login
@@ -515,40 +515,40 @@ function openProfileModal() {
   // ── Selector de avatares paginado ──
   const avatarsList = (typeof ALL_CHARACTERS !== "undefined")
     ? ALL_CHARACTERS.map(c => {
-        const slug = c.nombre.toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        return { name: c.nombre, file: `${slug}.webp` };
-      })
+      const slug = c.nombre.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return { name: c.nombre, file: `${slug}.webp` };
+    })
     : AVATAR_CHARACTERS;
 
   // Almacenar la lista globalmente para la paginación
   window._avatarsList = avatarsList;
-  window._avatarPage  = 0;
-  const AV_PER_PAGE   = 12;
+  window._avatarPage = 0;
+  const AV_PER_PAGE = 12;
 
   function _renderAvatarPage(page) {
     window._avatarPage = page;
-    const total  = window._avatarsList.length;
-    const pages  = Math.ceil(total / AV_PER_PAGE);
-    const start  = page * AV_PER_PAGE;
-    const slice  = window._avatarsList.slice(start, start + AV_PER_PAGE);
-    const grid   = document.getElementById('av-page-grid');
-    const info   = document.getElementById('av-page-info');
+    const total = window._avatarsList.length;
+    const pages = Math.ceil(total / AV_PER_PAGE);
+    const start = page * AV_PER_PAGE;
+    const slice = window._avatarsList.slice(start, start + AV_PER_PAGE);
+    const grid = document.getElementById('av-page-grid');
+    const info = document.getElementById('av-page-info');
     const btnPrev = document.getElementById('av-btn-prev');
     const btnNext = document.getElementById('av-btn-next');
     if (!grid) return;
     grid.innerHTML = slice.map(av => {
-      const fp  = `img/personajes/${av.file}`;
+      const fp = `img/personajes/${av.file}`;
       const sel = currentUserProfile.avatar === fp ? 'selected' : '';
       return `<div class="av-sel-item ${sel}" onclick="selectNewAvatar('${fp}')">
         <img src="${fp}" alt="${av.name}" title="${av.name}"
           onerror="if(this.src.endsWith('.webp')){this.src=this.src.replace('.webp','.jpg')}else if(this.src.endsWith('.jpg')){this.src=this.src.replace('.jpg','.jpeg')}else{this.style.display='none'}">
       </div>`;
     }).join('');
-    if (info)    info.textContent    = `Página ${page + 1} / ${pages}`;
-    if (btnPrev) btnPrev.disabled    = page === 0;
-    if (btnNext) btnNext.disabled    = page >= pages - 1;
+    if (info) info.textContent = `Página ${page + 1} / ${pages}`;
+    if (btnPrev) btnPrev.disabled = page === 0;
+    if (btnNext) btnNext.disabled = page >= pages - 1;
   }
   window._renderAvatarPage = _renderAvatarPage;
 
@@ -665,7 +665,7 @@ async function selectNewAvatar(path) {
     const db = firebase.database();
     await db.ref("users/" + savedUser + "/avatar").set(path);
     await db.ref("leaderboard/" + savedUser + "/avatar").set(path);
-    
+
     // Recargar modal
     currentUserProfile.avatar = path;
     openProfileModal();
@@ -753,7 +753,7 @@ async function handleForgotStep1() {
     `;
     overlay.addEventListener("click", e => { if (e.target === overlay) closeAllModals(); });
     document.body.appendChild(overlay);
-  } catch(err) {
+  } catch (err) {
     showAuthError("Error al buscar el usuario: " + err.message);
   }
 }
@@ -799,14 +799,14 @@ async function handleForgotStep2(userKey, qIndex) {
     `;
     overlay.addEventListener("click", e => { if (e.target === overlay) closeAllModals(); });
     document.body.appendChild(overlay);
-  } catch(err) {
+  } catch (err) {
     showAuthError("Error al cambiar la contraseña: " + err.message);
   }
 }
 
 // Interceptar guardado de estadísticas del juego
 // Obtener identificador de semana ISO-8601
-window.getWeeklyKey = function() {
+window.getWeeklyKey = function () {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 4 - (d.getDay() || 7));
@@ -818,7 +818,7 @@ window.getWeeklyKey = function() {
 
 // Interceptar guardado de estadísticas del juego
 window.StatsFirebase = {
-  saveGameResult: async function(mode, attempts, won, rivalName = null) {
+  saveGameResult: async function (mode, attempts, won, rivalName = null) {
     const savedUser = localStorage.getItem("lqsa_user");
     if (!savedUser) return;
 
@@ -842,7 +842,7 @@ window.StatsFirebase = {
         profile.wins = (profile.wins || 0) + 1;
         profile.currentStreak = (profile.currentStreak || 0) + 1;
         profile.total_questions_won_games = (profile.total_questions_won_games || 0) + attempts;
-        
+
         if (mode === 'quien_machine') {
           profile.wins_machine = (profile.wins_machine || 0) + 1;
         } else if (mode === 'quien_online') {
@@ -963,7 +963,7 @@ window.StatsFirebase = {
       // ── Feed de Actividad Público ──
       let actText = "";
       if (mode === 'quien_machine') {
-        actText = won 
+        actText = won
           ? `Adivinó a **${rivalName || "su rival"}** contra la máquina en ${attempts} preguntas.`
           : `Perdió contra la máquina intentando adivinar a **${rivalName || "su rival"}**.`;
       } else if (mode === 'quien_online') {
@@ -1085,7 +1085,9 @@ function renderAdminUsersList(users) {
         </div>
         <div style="display:flex; gap:5px; flex-wrap:wrap;">
           <button onclick="adminGiveCoins('${key}', '${user.username}')" style="background:rgba(251,191,36,0.15); border:1px solid #fbbf24; color:#fbbf24; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">🪙 Monedas</button>
+          <button onclick="adminSetCoinsZero('${key}', '${user.username}')" style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#f87171; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;" title="Poner monedas del vecino a 0">🪙 0</button>
           <button onclick="openAdminGiveCardModal('${key}', '${user.username}')" style="background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#c084fc; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">🎴 Cromo</button>
+          <button onclick="adminManagePlayerCards('${key}', '${user.username}')" style="background:rgba(236,72,153,0.15); border:1px solid #ec4899; color:#f472b6; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;" title="Gestión avanzada de cromos de su álbum">🎴 Gestión</button>
           <button onclick="adminChangePassword('${key}', '${user.username}')" style="background:rgba(240,192,32,0.15); border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">✏️ Clave</button>
           <button onclick="adminResetAchievements('${key}', '${user.username}')" style="background:rgba(251,146,60,0.15); border:1px solid #fb923c; color:#fb923c; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">🔒 Logros</button>
           <button onclick="adminResetStats('${key}', '${user.username}')" style="background:rgba(96,165,250,0.15); border:1px solid #60a5fa; color:#93c5fd; border-radius:6px; padding:5px 10px; font-size:0.73rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">📊 Stats</button>
@@ -1101,7 +1103,7 @@ function renderAdminUsersList(users) {
 function filterAdminUsers() {
   const searchInput = document.getElementById("admin-user-search");
   const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
-  
+
   const rows = document.querySelectorAll(".admin-user-row");
   rows.forEach(row => {
     const uname = (row.dataset.username || "").toLowerCase();
@@ -1197,6 +1199,22 @@ async function adminGiveCoins(key, username) {
     loadAdminUsers();
   } catch (error) {
     alert("Error al modificar las monedas: " + error.message);
+  }
+}
+
+// Poner las monedas de un vecino en 0
+async function adminSetCoinsZero(key, username) {
+  const ok = confirm(`⚠️ ¿Estás seguro de que quieres dejar en 0 las monedas del vecino "${username}"?`);
+  if (!ok) return;
+
+  try {
+    const db = firebase.database();
+    await db.ref("users/" + key + "/coins").set(0);
+    if (window.showLqsaAlert) showLqsaAlert(`Se han puesto a 0 las monedas del vecino "${username}" con éxito.`, "MONEDAS A 0", "success");
+    else alert(`✅ Se han puesto a 0 las monedas del vecino "${username}" con éxito.`);
+    loadAdminUsers();
+  } catch (error) {
+    alert("Error al poner las monedas en 0: " + error.message);
   }
 }
 
@@ -1334,9 +1352,9 @@ async function injectGiftCard(userKey, username, cardId, isFoil, button) {
       confetti({
         particleCount: 15,
         spread: 25,
-        origin: { 
-          x: event.clientX / window.innerWidth, 
-          y: event.clientY / window.innerHeight 
+        origin: {
+          x: event.clientX / window.innerWidth,
+          y: event.clientY / window.innerHeight
         }
       });
     }
@@ -1381,7 +1399,7 @@ async function adminResetAllStats() {
 
   try {
     const db = firebase.database();
-    
+
     // Obtener todos los usuarios registrados
     const snap = await db.ref("users").once("value");
     if (!snap.exists()) {
@@ -1414,5 +1432,245 @@ async function adminResetAllStats() {
   } catch (error) {
     console.error("Error en reset masivo:", error);
     alert("Error al realizar el reset masivo: " + error.message);
+  }
+}
+
+// ─── GESTIÓN AVANZADA DE CROMOS DE JUGADORES (ADMIN) ───────────────────
+async function adminManagePlayerCards(userKey, username) {
+  const existing = document.getElementById("admin-manage-cards-modal");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "admin-manage-cards-modal";
+  overlay.className = "auth-overlay";
+  overlay.style.zIndex = "16500";
+  overlay.style.background = "rgba(8, 4, 18, 0.96)";
+  overlay.style.backdropFilter = "blur(12px)";
+
+  overlay.innerHTML = `
+    <div style="width: min(1000px, 96vw); max-height: 90vh; padding: 25px; border: 2px solid #ec4899; background: #0b0716; display:flex; flex-direction:column; gap:18px; overflow:hidden; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); box-sizing: border-box; position:relative;">
+      
+      <button class="auth-x" onclick="document.getElementById('admin-manage-cards-modal').remove()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; font-weight: bold; cursor: pointer; position: absolute; top: 20px; right: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+      
+      <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-right: 40px;">
+        <h2 style="font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#f472b6; margin:0; letter-spacing:1px; text-shadow:0 0 15px rgba(236,72,153,0.3);">🎴 ÁLBUM DE VECINO: ${username.toUpperCase()}</h2>
+        <button onclick="adminDeleteAllCards('${userKey}', '${username}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; padding:8px 16px; border-radius:8px; color:#ef4444; cursor:pointer; font-weight:bold; font-size:0.8rem; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">⚠️ ELIMINAR TODOS LOS CROMOS</button>
+      </div>
+
+      <div style="display:flex; gap:10px; width:100%;">
+        <input type="text" id="admin-manage-card-search" placeholder="🔍 Buscar cromo por nombre..." oninput="adminFilterManageCards('${userKey}', '${username}')" 
+               style="flex:1; background:#140e22; border:1px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:8px; color:#fff; font-size:0.9rem; outline:none; margin:0;">
+      </div>
+
+      <!-- Rejilla de Cartas Avanzada -->
+      <div id="admin-manage-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px; overflow-y:auto; flex:1; padding: 5px; scrollbar-width:thin; min-height: 250px;">
+        <p style="color:var(--text2); text-align:center;">Cargando inventario de cromos del vecino...</p>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  adminRenderManageCardsGrid(userKey, username);
+}
+
+// Buscar y filtrar en el mazo de administración
+function adminFilterManageCards(userKey, username) {
+  const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+  adminRenderManageCardsGrid(userKey, username, query);
+}
+
+// Renderizar la rejilla completa de cromos y controles
+async function adminRenderManageCardsGrid(userKey, username, query = '') {
+  const grid = document.getElementById("admin-manage-cards-grid");
+  if (!grid) return;
+
+  try {
+    const db = firebase.database();
+    const snap = await db.ref(`users/${userKey}/album/cards`).once('value');
+    const userCards = snap.exists() ? snap.val() : {};
+
+    let html = "";
+
+    // Obtener catálogo completo
+    if (typeof ALBUM_CARDS === 'undefined') {
+      grid.innerHTML = `<p style="color:#ef4444; text-align:center;">Catálogo del Álbum no encontrado (ALBUM_CARDS es undefined).</p>`;
+      return;
+    }
+
+    const filtered = ALBUM_CARDS.filter(c => c.name.toLowerCase().includes(query));
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<p style="color:var(--text2); text-align:center;">No se encontraron cromos que coincidan con la búsqueda.</p>`;
+      return;
+    }
+
+    html = filtered.map(card => {
+      const uCard = userCards[card.id];
+      const owned = !!uCard;
+      const borderCol = card.baseRarity.color;
+
+      if (owned) {
+        const count = uCard.count || 1;
+        const level = uCard.level || 1;
+        const signed = !!uCard.signed;
+        const foil = !!uCard.foil;
+
+        return `
+          <div style="border: 2px solid ${borderCol}; border-radius: 14px; background:#120c24; display:flex; flex-direction:column; overflow:hidden; position:relative; box-shadow:0 6px 16px rgba(0,0,0,0.6); padding:12px; gap:10px; height: 260px; box-sizing: border-box; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            
+            <!-- Cabecera cromo -->
+            <div style="display:flex; gap:12px; align-items:center;">
+              <img src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="width:55px; height:55px; border-radius:10px; object-fit:cover; border:2px solid ${borderCol}; background: #0b0716;">
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:1.05rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.2; text-align: left;">${card.name}</div>
+                <div style="font-size:0.7rem; color:${borderCol}; font-weight:bold; text-transform:uppercase; font-family:monospace; text-align: left;">${card.baseRarity.name}</div>
+              </div>
+            </div>
+
+            <!-- Controles de Edición -->
+            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; display:flex; flex-direction:column; gap:8px; font-size:0.8rem; flex: 1; justify-content: space-between;">
+              
+              <!-- Cantidad / Repetidos -->
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text2); font-weight: 500;">Copias:</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${Math.max(0, count - 1)})" style="background:#334155; border:none; width:24px; height:24px; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">-</button>
+                  <span style="font-weight:bold; color:#fbbf24; font-family:monospace; min-width:20px; text-align:center; font-size: 0.9rem;">${count}</span>
+                  <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${count + 1})" style="background:#334155; border:none; width:24px; height:24px; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">+</button>
+                </div>
+              </div>
+
+              <!-- Nivel de Desquicie -->
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text2); font-weight: 500;">Desquicie:</span>
+                <select onchange="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'level', parseInt(this.value))" style="background:#1e1b4b; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#c084fc; font-weight:bold; padding:4px 8px; font-size:0.8rem; outline:none; cursor:pointer;">
+                  <option value="1" ${level === 1 ? 'selected' : ''}>⭐ 1</option>
+                  <option value="2" ${level === 2 ? 'selected' : ''}>⭐⭐ 2</option>
+                  <option value="3" ${level === 3 ? 'selected' : ''}>⭐⭐⭐ 3</option>
+                  <option value="4" ${level === 4 ? 'selected' : ''}>⭐⭐⭐⭐ 4</option>
+                  <option value="5" ${level === 5 ? 'selected' : ''}>👑⭐⭐⭐⭐⭐ 5</option>
+                </select>
+              </div>
+
+              <!-- Foil y Firmada en un row -->
+              <div style="display:flex; justify-content:space-between; gap:8px; margin-top:2px;">
+                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'foil', ${!foil})" style="flex:1; background:${foil ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${foil ? 'transparent' : 'rgba(255,255,255,0.1)'}; color:${foil ? '#fff' : 'var(--text2)'}; font-size:0.7rem; padding:6px; border-radius:6px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
+                  🌈 ${foil ? 'FOIL' : 'NORMAL'}
+                </button>
+                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'signed', ${!signed})" style="flex:1; background:${signed ? 'linear-gradient(135deg, #10b981, #047857)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${signed ? 'transparent' : 'rgba(255,255,255,0.1)'}; color:${signed ? '#fff' : 'var(--text2)'}; font-size:0.7rem; padding:6px; border-radius:6px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
+                  🖋️ ${signed ? 'FIRMADO' : 'S/ FIRMA'}
+                </button>
+              </div>
+
+              <!-- Eliminar esta carta individual -->
+              <button onclick="adminDeletePlayerCard('${userKey}', '${username}', '${card.id}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; color:#ef4444; border-radius:6px; padding:6px; font-size:0.75rem; font-weight:bold; margin-top:4px; cursor:pointer; transition:all 0.15s; font-family:'Barlow Condensed', sans-serif; letter-spacing:0.5px;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">
+                🗑️ ELIMINAR CROMO
+              </button>
+
+            </div>
+          </div>
+        `;
+      } else {
+        // Cromo no obtenido
+        return `
+          <div style="border: 2px dashed rgba(255,255,255,0.12); border-radius: 14px; background:rgba(0,0,0,0.5); display:flex; flex-direction:column; overflow:hidden; position:relative; padding:12px; gap:10px; opacity:0.65; justify-content:space-between; height: 260px; box-sizing:border-box;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="width:55px; height:55px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:#888; border: 2px dashed rgba(255,255,255,0.15);">?</div>
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:1.05rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align: left;">${card.name}</div>
+                <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; font-family:monospace; text-align: left;">${card.baseRarity.name}</div>
+              </div>
+            </div>
+            
+            <button onclick="adminAddPlayerCard('${userKey}', '${username}', '${card.id}')" style="width:100%; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#4ade80; border-radius:6px; padding:10px; font-size:0.8rem; font-weight:bold; cursor:pointer; transition:all 0.2s; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px;" onmouseover="this.style.background='#22c55e'; this.style.color='#fff';" onmouseout="this.style.background='rgba(34,197,94,0.15)'; this.style.color='#4ade80';">
+              ➕ AÑADIR CROMO
+            </button>
+          </div>
+        `;
+      }
+    }).join('');
+
+    grid.innerHTML = html;
+  } catch (error) {
+    console.error("Error al renderizar mazo admin:", error);
+    grid.innerHTML = `<p style="color:#ef4444; text-align:center;">Error al cargar cromos: ${error.message}</p>`;
+  }
+}
+
+// Modificar un campo específico de una carta
+async function adminUpdatePlayerCardField(userKey, username, cardId, field, value) {
+  if (field === 'count' && value <= 0) {
+    adminDeletePlayerCard(userKey, username, cardId);
+    return;
+  }
+
+  try {
+    const db = firebase.database();
+    await db.ref(`users/${userKey}/album/cards/${cardId}/${field}`).set(value);
+
+    // Si incrementa duplicados, actualizar también la marca de tiempo de obtenido si aplica
+    if (field === 'count') {
+      await db.ref(`users/${userKey}/album/cards/${cardId}/obtainedAt`).set(firebase.database.ServerValue.TIMESTAMP);
+    }
+
+    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    adminRenderManageCardsGrid(userKey, username, query);
+  } catch (error) {
+    alert("Error al actualizar campo: " + error.message);
+  }
+}
+
+// Eliminar un cromo individualmente
+async function adminDeletePlayerCard(userKey, username, cardId) {
+  try {
+    const db = firebase.database();
+    await db.ref(`users/${userKey}/album/cards/${cardId}`).remove();
+
+    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    adminRenderManageCardsGrid(userKey, username, query);
+  } catch (error) {
+    alert("Error al eliminar cromo: " + error.message);
+  }
+}
+
+// Añadir un cromo al inventario
+async function adminAddPlayerCard(userKey, username, cardId) {
+  try {
+    const db = firebase.database();
+    await db.ref(`users/${userKey}/album/cards/${cardId}`).set({
+      count: 1,
+      level: 1,
+      signed: false,
+      foil: false,
+      obtainedAt: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    adminRenderManageCardsGrid(userKey, username, query);
+  } catch (error) {
+    alert("Error al añadir cromo: " + error.message);
+  }
+}
+
+// Eliminar todos los cromos de la cuenta del jugador
+async function adminDeleteAllCards(userKey, username) {
+  const ok = confirm(`⚠️ ¿Estás COMPLETAMENTE seguro de que quieres eliminar TODOS los cromos del álbum del vecino "${username}"?\n\nEsta acción no se puede deshacer.`);
+  if (!ok) return;
+
+  try {
+    const db = firebase.database();
+    await db.ref(`users/${userKey}/album/cards`).remove();
+
+    if (window.showLqsaAlert) {
+      showLqsaAlert(`Se han eliminado todos los cromos de "${username}" correctamente.`, "ÁLBUM VACIADO", "success");
+    } else {
+      alert(`✅ Se han eliminado todos los cromos de "${username}" con éxito.`);
+    }
+
+    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    adminRenderManageCardsGrid(userKey, username, query);
+  } catch (error) {
+    alert("Error al eliminar los cromos: " + error.message);
   }
 }

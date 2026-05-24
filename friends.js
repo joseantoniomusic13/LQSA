@@ -274,6 +274,8 @@ async function acceptInvitation(invKey, inv) {
   // Unirse a la sala
   if (inv.mode === 'duel') {
     joinDuelRoom(inv.roomCode);
+  } else if (inv.mode === 'card_duel') {
+    if (typeof joinCardDuelRoom === 'function') joinCardDuelRoom(inv.roomCode);
   } else {
     const input = document.getElementById('quien-join-input');
     if (input) input.value = inv.roomCode;
@@ -302,7 +304,7 @@ function _showInvitationToast(invKey, inv) {
   if (document.getElementById(`inv-toast-${invKey}`)) return;
 
   const isTrade = inv.mode === 'trade';
-  const modeLabel = isTrade ? '🔄 Propuesta de Intercambio' : (inv.mode === 'duel' ? '⚔️ Modo Duelo' : '👥 Duelo Clásico');
+  const modeLabel = isTrade ? '🔄 Propuesta de Intercambio' : (inv.mode === 'duel' ? '⚔️ Modo Duelo' : (inv.mode === 'card_duel' ? '🎴 Duelo de Cartas TCG' : '👥 Duelo Clásico'));
 
   const toast = document.createElement('div');
   toast.id = `inv-toast-${invKey}`;
@@ -484,10 +486,12 @@ async function _renderFriendsList() {
 
   // Renderizar la lista instantáneamente con estado offline por defecto
   container.innerHTML = keys.map(uid => {
-    const f = friends[uid];
     const currentRoom = window._roomCode || window._duelRoomCode || null;
+    const isCardDuel = !!window._isCardDuel;
     const isDuel = window._duelRoomCode ? true : false;
+    const inviteMode = isCardDuel ? 'card_duel' : (isDuel ? 'duel' : 'classic');
     const canInvite = !!currentRoom;
+    const f = friends[uid];
 
     return `
       <div class="friends-item" data-uid="${uid}">
@@ -502,7 +506,7 @@ async function _renderFriendsList() {
         </div>
         <div class="friends-item-actions">
           <button class="friends-chat-btn" onclick="openPrivateChat('${uid}', '${f.username.replace(/'/g, "\\'")}', '${f.avatar.replace(/'/g, "\\'")}')" title="Chat privado">💬</button>
-          <button class="friends-invite-btn" data-uid="${uid}" onclick="inviteFriendToRoom('${uid}', '${currentRoom}', '${isDuel ? 'duel' : 'classic'}')" style="display:none">📨 Invitar</button>
+          <button class="friends-invite-btn" data-uid="${uid}" onclick="inviteFriendToRoom('${uid}', '${currentRoom}', '${inviteMode}')" style="display:none">📨 Invitar</button>
           <button class="friends-chat-btn" onclick="if (typeof startLiveTradeSession === 'function') startLiveTradeSession('${uid}', '${f.username.replace(/'/g, "\\'")}')" title="Proponer Intercambio de Cromos en Vivo" style="background: linear-gradient(135deg, #a855f7, #6366f1); border: 1px solid rgba(255,255,255,0.08); font-size:0.8rem;">🔄</button>
           <button class="friends-remove-btn" onclick="removeFriend('${uid}')" title="Eliminar amigo">🗑</button>
         </div>
@@ -566,7 +570,7 @@ function _friendsSuccess(msg) {
   s.textContent = `
     /* ── Panel de amigos ── */
     .friends-panel {
-      position: fixed; bottom: 100px; right: 48px; z-index: 910;
+      position: fixed; bottom: 100px; right: 48px; z-index: 100000 !important;
       width: min(340px, 92vw);
       background: rgba(14,14,24,0.96);
       border: 1px solid rgba(240,192,32,0.2);
@@ -728,7 +732,7 @@ function _friendsSuccess(msg) {
 
     /* ── Chat privado flotante ── */
     .private-chat-box {
-      position: fixed; bottom: 32px; right: 120px; z-index: 920;
+      position: fixed; bottom: 32px; right: 120px; z-index: 100001 !important;
       width: min(300px, 85vw); height: 380px;
       background: rgba(14,14,24,0.98);
       border: 1px solid rgba(240,192,32,0.3);
@@ -982,7 +986,9 @@ async function openInviteFriendsModal() {
   modal.style.zIndex = '3000'; // Asegurar que quede encima de cualquier otro overlay
   
   const currentRoom = window._roomCode || window._duelRoomCode || null;
-  const isDuel = !!window._duelRoomCode;
+  const isCardDuel = !!window._isCardDuel;
+  const isDuel = !isCardDuel && !!window._duelRoomCode;
+  const inviteMode = isCardDuel ? 'card_duel' : (isDuel ? 'duel' : 'classic');
   
   if (!currentRoom) {
     alert('No estás en ninguna sala de juego activa.');
@@ -998,26 +1004,26 @@ async function openInviteFriendsModal() {
   } else {
     friendsHtml = `
       <div class="invite-friends-list" style="max-height: 250px; overflow-y: auto; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;">
-        ${keys.map(uid => {
-          const f = friends[uid];
-          return `
-            <div class="friends-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="position: relative;">
-                  <img src="${f.avatar}" alt="${f.username}" onerror="this.src='img/personajes/amador-rivas.webp'" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid rgba(255,255,255,0.12);">
-                  <span class="invite-online-dot offline" data-uid="${uid}" style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(10,10,10,0.97); background: #6b7280;"></span>
-                </div>
-                <div style="text-align: left;">
-                  <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--text);">${f.username}</div>
-                  <div class="invite-status-text" data-uid="${uid}" style="font-size: 0.7rem; color: var(--text2);">Desconectado/a</div>
-                </div>
-              </div>
-              <button class="q-btn invite-action-btn" data-uid="${uid}" onclick="sendInvitationFromModal('${uid}', '${currentRoom}', '${isDuel ? 'duel' : 'classic'}', this)" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(240,192,32,0.15); border-color: rgba(240,192,32,0.35); color: var(--accent); cursor: pointer; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: bold; transition: all 0.2s;">
-                ✉️ Invitar
-              </button>
-            </div>
-          `;
-        }).join('')}
+         ${keys.map(uid => {
+           const f = friends[uid];
+           return `
+             <div class="friends-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+               <div style="display: flex; align-items: center; gap: 10px;">
+                 <div style="position: relative;">
+                   <img src="${f.avatar}" alt="${f.username}" onerror="this.src='img/personajes/amador-rivas.webp'" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid rgba(255,255,255,0.12);">
+                   <span class="invite-online-dot offline" data-uid="${uid}" style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(10,10,10,0.97); background: #6b7280;"></span>
+                 </div>
+                 <div style="text-align: left;">
+                   <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--text);">${f.username}</div>
+                   <div class="invite-status-text" data-uid="${uid}" style="font-size: 0.7rem; color: var(--text2);">Desconectado/a</div>
+                 </div>
+               </div>
+               <button class="q-btn invite-action-btn" data-uid="${uid}" onclick="sendInvitationFromModal('${uid}', '${currentRoom}', '${inviteMode}', this)" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(240,192,32,0.15); border-color: rgba(240,192,32,0.35); color: var(--accent); cursor: pointer; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: bold; transition: all 0.2s;">
+                 ✉️ Invitar
+               </button>
+             </div>
+           `;
+         }).join('')}
       </div>
     `;
   }
