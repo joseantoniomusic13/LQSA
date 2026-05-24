@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    LQSACatena — Sistema de Autenticación
    y Estadísticas Basado Directamente en Realtime Database
    (Evita errores de Firebase Auth Provider deshabilitado)
@@ -1471,38 +1471,272 @@ async function adminManagePlayerCards(userKey, username) {
   const existing = document.getElementById("admin-manage-cards-modal");
   if (existing) existing.remove();
 
-  const overlay = document.createElement("div");
-  overlay.id = "admin-manage-cards-modal";
-  overlay.className = "auth-overlay";
-  overlay.style.zIndex = "16500";
-  overlay.style.background = "rgba(8, 4, 18, 0.96)";
-  overlay.style.backdropFilter = "blur(12px)";
+  try {
+    const db = firebase.database();
+    const uSnap = await db.ref(`users/${userKey}`).once('value');
+    if (!uSnap.exists()) {
+      alert("No se pudo cargar el perfil del vecino.");
+      return;
+    }
+    const profile = uSnap.val();
 
-  overlay.innerHTML = `
-    <div style="width: min(1000px, 96vw); max-height: 90vh; padding: 25px; border: 2px solid #ec4899; background: #0b0716; display:flex; flex-direction:column; gap:18px; overflow:hidden; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); box-sizing: border-box; position:relative;">
-      
-      <button class="auth-x" onclick="document.getElementById('admin-manage-cards-modal').remove()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; font-weight: bold; cursor: pointer; position: absolute; top: 20px; right: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
-      
-      <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-right: 40px;">
-        <h2 style="font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#f472b6; margin:0; letter-spacing:1px; text-shadow:0 0 15px rgba(236,72,153,0.3);">🎴 ÁLBUM DE VECINO: ${username.toUpperCase()}</h2>
-        <button onclick="adminDeleteAllCards('${userKey}', '${username}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; padding:8px 16px; border-radius:8px; color:#ef4444; cursor:pointer; font-weight:bold; font-size:0.8rem; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px; transition:all 0.2s;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">⚠️ ELIMINAR TODOS LOS CROMOS</button>
+    const overlay = document.createElement("div");
+    overlay.id = "admin-manage-cards-modal";
+    overlay.className = "auth-overlay";
+    overlay.style.zIndex = "16500";
+    overlay.style.background = "rgba(8, 4, 18, 0.96)";
+    overlay.style.backdropFilter = "blur(12px)";
+
+    overlay.innerHTML = `
+      <div style="width: min(1000px, 96vw); max-height: 90vh; padding: 25px; border: 2px solid #ec4899; background: #0b0716; display:flex; flex-direction:column; gap:18px; overflow:hidden; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); box-sizing: border-box; position:relative;">
+        
+        <button class="auth-x" onclick="document.getElementById('admin-manage-cards-modal').remove()" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; font-weight: bold; cursor: pointer; position: absolute; top: 20px; right: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+        
+        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px; display:flex; flex-direction:column; gap:12px; padding-right: 40px;">
+          <h2 style="font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#f472b6; margin:0; letter-spacing:1px; text-shadow:0 0 15px rgba(236,72,153,0.3); text-align: left;">⚙️ GESTIÓN VECINAL: ${username.toUpperCase()}</h2>
+          
+          <!-- Tab Controls -->
+          <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:5px;">
+            <button id="admin-tab-belongings" onclick="adminSwitchTab('belongings')" style="background:rgba(236,72,153,0.25); border:1px solid #ec4899; color:#f472b6; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:0.95rem; text-transform:uppercase;">📊 Pertenencias & Estadísticas</button>
+            <button id="admin-tab-cards" onclick="adminSwitchTab('cards')" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:#94a3b8; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:0.95rem; text-transform:uppercase;">🎴 Gestión de Cromos TCG</button>
+          </div>
+        </div>
+
+        <!-- Tab 1 Content: Belongings & Stats -->
+        <div id="admin-sec-belongings" style="display:flex; flex-direction:column; gap:18px; overflow-y:auto; flex:1; padding-right:5px; scrollbar-width:thin;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
+            <div style="display:flex; flex-direction:column; gap:6px; text-align: left;">
+              <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">🪙 Monedas Vecinales:</label>
+              <input type="number" id="admin-edit-coins" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:8px; padding:10px;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; text-align: left;">
+              <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">🏆 Victorias Totales:</label>
+              <input type="number" id="admin-edit-wins" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:8px; padding:10px;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; text-align: left;">
+              <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">🎮 Partidas Jugadas:</label>
+              <input type="number" id="admin-edit-played" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:8px; padding:10px;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; text-align: left;">
+              <label style="font-size:0.8rem; color:#94a3b8; font-weight:bold; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">⚡ Racha Máxima:</label>
+              <input type="number" id="admin-edit-streak" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:8px; padding:10px;">
+            </div>
+          </div>
+
+          <!-- Achievements Checklist -->
+          <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:15px; text-align: left;">
+            <h3 style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:#f472b6; margin:0 0 12px 0;">🏅 Logros de la Comunidad</h3>
+            <div id="admin-edit-achievements-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:10px;">
+              <!-- Cargar dinámicamente -->
+            </div>
+          </div>
+
+          <button onclick="adminSavePlayerBelongings('${userKey}', '${username}')" style="background:#22c55e; border:none; padding:12px; color:#fff; font-weight:bold; border-radius:10px; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; text-transform:uppercase; margin-top:auto; display:block; width:100%; transition:background 0.2s;" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">💾 Guardar Pertenencias</button>
+        </div>
+
+        <!-- Tab 2 Content: Cards Management -->
+        <div id="admin-sec-cards" style="display:none; flex-direction:row; gap:20px; overflow:hidden; flex:1; min-height: 380px;">
+          <!-- LEFT PANEL: Gift card form -->
+          <div style="flex:1.2; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:15px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
+            <h3 style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:#ffd700; margin:0; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px; text-align: left;">🎁 Regalar Cromo</h3>
+            
+            <div style="display:flex; flex-direction:column; gap:4px; text-align: left;">
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">Seleccionar Carta:</label>
+              <select id="admin-gift-card-id" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:0.85rem; height:40px; padding:4px 8px; border-radius:8px;">
+                <!-- Populate dynamically -->
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div style="display:flex; flex-direction:column; gap:4px; text-align: left;">
+                <label style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">Cantidad:</label>
+                <input type="number" id="admin-gift-card-count" class="auth-inp" value="1" min="1" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:8px; padding:10px;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px; text-align: left;">
+                <label style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">Nivel Desquicie:</label>
+                <select id="admin-gift-card-level" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:0.85rem; padding:4px 8px; border-radius:8px; height: 38px;">
+                  <option value="1">⭐ Nivel 1</option>
+                  <option value="2">⭐⭐ Nivel 2</option>
+                  <option value="3">⭐⭐⭐ Nivel 3</option>
+                  <option value="4">⭐⭐⭐⭐ Nivel 4</option>
+                  <option value="5">👑⭐⭐⭐⭐⭐ Nivel 5</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div style="display:flex; flex-direction:column; gap:4px; text-align: left;">
+                <label style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">Tipo Holograma:</label>
+                <select id="admin-gift-card-foil" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:0.85rem; padding:4px 8px; border-radius:8px; height: 38px;">
+                  <option value="false">Normal</option>
+                  <option value="true">Holográfico (Foil) 🌈</option>
+                </select>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px; text-align: left;">
+                <label style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">Autógrafo:</label>
+                <select id="admin-gift-card-signed" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:0.85rem; padding:4px 8px; border-radius:8px; height: 38px;">
+                  <option value="false">Sin firmar</option>
+                  <option value="true">Autografiado (Firmado) 🖋️</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="admin-gift-card-btn" style="background:#22c55e; border:none; padding:10px; color:#fff; font-weight:bold; border-radius:8px; cursor:pointer; font-family:'Barlow Condensed',sans-serif; font-size:1rem; text-transform:uppercase; margin-top:auto;" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">🎁 REGALAR CARTA</button>
+          </div>
+
+          <!-- RIGHT PANEL: Current inventory (searchable, only owned cards) -->
+          <div style="flex:1.8; display:flex; flex-direction:column; gap:12px; overflow:hidden;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="admin-manage-card-search" placeholder="🔍 Buscar cromo en inventario..." oninput="adminFilterManageCards('${userKey}', '${username}')" 
+                     style="flex:1; background:#140e22; border:1px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:8px; color:#fff; font-size:0.9rem; outline:none; margin:0;">
+              <button onclick="adminDeleteAllCards('${userKey}', '${username}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; padding:8px 12px; border-radius:8px; color:#ef4444; cursor:pointer; font-weight:bold; font-size:0.75rem; font-family:'Barlow Condensed',sans-serif; transition:all 0.2s; text-transform:uppercase; letter-spacing:0.5px;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">🗑️ Borrar Todo</button>
+            </div>
+
+            <div id="admin-manage-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; overflow-y:auto; flex:1; padding-right:5px; scrollbar-width:thin; align-content: start;">
+              <p style="color:var(--text2); text-align:center;">Cargando colección del vecino...</p>
+            </div>
+          </div>
+        </div>
+
       </div>
+    `;
 
-      <div style="display:flex; gap:10px; width:100%;">
-        <input type="text" id="admin-manage-card-search" placeholder="🔍 Buscar cromo por nombre..." oninput="adminFilterManageCards('${userKey}', '${username}')" 
-               style="flex:1; background:#140e22; border:1px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:8px; color:#fff; font-size:0.9rem; outline:none; margin:0;">
-      </div>
+    document.body.appendChild(overlay);
 
-      <!-- Rejilla de Cartas Avanzada -->
-      <div id="admin-manage-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px; overflow-y:auto; flex:1; padding: 5px; scrollbar-width:thin; min-height: 250px;">
-        <p style="color:var(--text2); text-align:center;">Cargando inventario de cromos del vecino...</p>
-      </div>
+    // Rellenar Pertenencias
+    document.getElementById("admin-edit-coins").value = profile.coins || 0;
+    document.getElementById("admin-edit-wins").value = profile.wins || 0;
+    document.getElementById("admin-edit-played").value = profile.played || 0;
+    document.getElementById("admin-edit-streak").value = profile.maxStreak || 0;
 
-    </div>
-  `;
+    // Rellenar Logros
+    const ownedAchs = new Set(profile.achievements || []);
+    const achContainer = document.getElementById("admin-edit-achievements-container");
+    achContainer.innerHTML = ACHIEVEMENTS.map(ach => {
+      const checked = ownedAchs.has(ach.id) ? "checked" : "";
+      return `
+        <label style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px; display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.85rem;" onmouseover="this.style.borderColor='rgba(236,72,153,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'">
+          <input type="checkbox" name="admin-edit-achievement" value="${ach.id}" ${checked} style="width:16px; height:16px; cursor:pointer; accent-color:#ec4899;">
+          <span style="font-size:1.2rem;">${ach.icon}</span>
+          <div style="display:flex; flex-direction:column; text-align: left;">
+            <strong style="color:#fff;">${ach.name}</strong>
+            <span style="font-size:0.7rem; color:#94a3b8;">${ach.desc}</span>
+          </div>
+        </label>
+      `;
+    }).join("");
 
-  document.body.appendChild(overlay);
-  adminRenderManageCardsGrid(userKey, username);
+    // Rellenar selector de cromos para regalar
+    const giftSelect = document.getElementById("admin-gift-card-id");
+    if (typeof ALBUM_CARDS !== 'undefined') {
+      giftSelect.innerHTML = ALBUM_CARDS.map(card => {
+        return `<option value="${card.id}">${card.name} (${card.baseRarity.name})</option>`;
+      }).join("");
+    }
+
+    // Programar botón de regalar cromo
+    document.getElementById("admin-gift-card-btn").onclick = () => {
+      const cardId = giftSelect.value;
+      const count = parseInt(document.getElementById("admin-gift-card-count").value) || 1;
+      const level = parseInt(document.getElementById("admin-gift-card-level").value) || 1;
+      const foil = document.getElementById("admin-gift-card-foil").value === "true";
+      const signed = document.getElementById("admin-gift-card-signed").value === "true";
+      adminGiftPlayerCardCustom(userKey, username, cardId, count, level, foil, signed);
+    };
+
+    // Renderizar colección en Tab 2
+    adminRenderManageCardsGrid(userKey, username);
+
+  } catch (error) {
+    alert("Error al cargar la gestión vecinal: " + error.message);
+  }
+}
+
+// Cambiar de Pestaña en Gestión Vecinal
+function adminSwitchTab(tabName) {
+  const isBelongings = tabName === 'belongings';
+  
+  const bTab = document.getElementById("admin-tab-belongings");
+  const cTab = document.getElementById("admin-tab-cards");
+  const bSec = document.getElementById("admin-sec-belongings");
+  const cSec = document.getElementById("admin-sec-cards");
+  
+  if (bTab) {
+    bTab.style.background = isBelongings ? 'rgba(236,72,153,0.25)' : 'transparent';
+    bTab.style.borderColor = isBelongings ? '#ec4899' : 'rgba(255,255,255,0.1)';
+    bTab.style.color = isBelongings ? '#f472b6' : '#94a3b8';
+  }
+  if (cTab) {
+    cTab.style.background = !isBelongings ? 'rgba(236,72,153,0.25)' : 'transparent';
+    cTab.style.borderColor = !isBelongings ? '#ec4899' : 'rgba(255,255,255,0.1)';
+    cTab.style.color = !isBelongings ? '#f472b6' : '#94a3b8';
+  }
+  
+  if (bSec) bSec.style.display = isBelongings ? 'flex' : 'none';
+  if (cSec) cSec.style.display = !isBelongings ? 'flex' : 'none';
+}
+
+// Guardar Pertenencias y Logros de un Vecino
+async function adminSavePlayerBelongings(userKey, username) {
+  try {
+    const db = firebase.database();
+    
+    const coins = parseInt(document.getElementById("admin-edit-coins").value) || 0;
+    const wins = parseInt(document.getElementById("admin-edit-wins").value) || 0;
+    const played = parseInt(document.getElementById("admin-edit-played").value) || 0;
+    const maxStreak = parseInt(document.getElementById("admin-edit-streak").value) || 0;
+
+    // Obtener logros marcados
+    const checkedAchs = [];
+    const checkboxes = document.querySelectorAll('input[name="admin-edit-achievement"]:checked');
+    checkboxes.forEach(cb => {
+      checkedAchs.push(cb.value);
+    });
+
+    const updates = {
+      coins: coins,
+      wins: wins,
+      played: played,
+      maxStreak: maxStreak,
+      achievements: checkedAchs
+    };
+
+    await db.ref(`users/${userKey}`).update(updates);
+
+    if (window.showLqsaAlert) {
+      window.showLqsaAlert(`💾 Pertenencias y logros de "${username}" guardados con éxito.`, "CAMBIOS GUARDADOS", "success");
+    } else {
+      alert("💾 Pertenencias y logros guardados con éxito.");
+    }
+  } catch (error) {
+    alert("Error al guardar pertenecias: " + error.message);
+  }
+}
+
+// Regalar Cromo con especificaciones personalizadas
+async function adminGiftPlayerCardCustom(userKey, username, cardId, count, level, foil, signed) {
+  try {
+    const db = firebase.database();
+    await db.ref(`users/${userKey}/album/cards/${cardId}`).set({
+      count: parseInt(count) || 1,
+      level: parseInt(level) || 1,
+      signed: !!signed,
+      foil: !!foil,
+      obtainedAt: firebase.database.ServerValue.TIMESTAMP
+    });
+    
+    const queryEl = document.getElementById("admin-manage-card-search");
+    const query = queryEl ? queryEl.value.trim().toLowerCase() : "";
+    adminRenderManageCardsGrid(userKey, username, query);
+
+    if (window.showLqsaAlert) {
+      window.showLqsaAlert("🎁 Cromo entregado con éxito al vecino.", "CROMO ENTREGADO", "success");
+    } else {
+      alert("🎁 Cromo entregado con éxito.");
+    }
+  } catch (error) {
+    alert("Error al regalar cromo: " + error.message);
+  }
 }
 
 // Buscar y filtrar en el mazo de administración
@@ -1511,7 +1745,7 @@ function adminFilterManageCards(userKey, username) {
   adminRenderManageCardsGrid(userKey, username, query);
 }
 
-// Renderizar la rejilla completa de cromos y controles
+// Renderizar la rejilla de cromos del inventario real del jugador
 async function adminRenderManageCardsGrid(userKey, username, query = '') {
   const grid = document.getElementById("admin-manage-cards-grid");
   if (!grid) return;
@@ -1521,105 +1755,84 @@ async function adminRenderManageCardsGrid(userKey, username, query = '') {
     const snap = await db.ref(`users/${userKey}/album/cards`).once('value');
     const userCards = snap.exists() ? snap.val() : {};
 
-    let html = "";
-
-    // Obtener catálogo completo
     if (typeof ALBUM_CARDS === 'undefined') {
       grid.innerHTML = `<p style="color:#ef4444; text-align:center;">Catálogo del Álbum no encontrado (ALBUM_CARDS es undefined).</p>`;
       return;
     }
 
-    const filtered = ALBUM_CARDS.filter(c => c.name.toLowerCase().includes(query));
+    const filtered = ALBUM_CARDS.filter(c => {
+      const uCard = userCards[c.id];
+      if (!uCard) return false;
+      return c.name.toLowerCase().includes(query);
+    });
 
     if (filtered.length === 0) {
-      grid.innerHTML = `<p style="color:var(--text2); text-align:center;">No se encontraron cromos que coincidan con la búsqueda.</p>`;
+      grid.innerHTML = `<p style="color:var(--text2); text-align:center; padding: 20px; grid-column: 1 / -1;">No se encontraron cromos en propiedad.</p>`;
       return;
     }
 
-    html = filtered.map(card => {
+    const html = filtered.map(card => {
       const uCard = userCards[card.id];
-      const owned = !!uCard;
       const borderCol = card.baseRarity.color;
+      const count = uCard.count || 1;
+      const level = uCard.level || 1;
+      const signed = !!uCard.signed;
+      const foil = !!uCard.foil;
 
-      if (owned) {
-        const count = uCard.count || 1;
-        const level = uCard.level || 1;
-        const signed = !!uCard.signed;
-        const foil = !!uCard.foil;
-
-        return `
-          <div style="border: 2px solid ${borderCol}; border-radius: 14px; background:#120c24; display:flex; flex-direction:column; overflow:hidden; position:relative; box-shadow:0 6px 16px rgba(0,0,0,0.6); padding:12px; gap:10px; height: 260px; box-sizing: border-box; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-            
-            <!-- Cabecera cromo -->
-            <div style="display:flex; gap:12px; align-items:center;">
-              <img src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="width:55px; height:55px; border-radius:10px; object-fit:cover; border:2px solid ${borderCol}; background: #0b0716;">
-              <div style="flex:1; overflow:hidden;">
-                <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:1.05rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.2; text-align: left;">${card.name}</div>
-                <div style="font-size:0.7rem; color:${borderCol}; font-weight:bold; text-transform:uppercase; font-family:monospace; text-align: left;">${card.baseRarity.name}</div>
-              </div>
-            </div>
-
-            <!-- Controles de Edición -->
-            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; display:flex; flex-direction:column; gap:8px; font-size:0.8rem; flex: 1; justify-content: space-between;">
-              
-              <!-- Cantidad / Repetidos -->
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:var(--text2); font-weight: 500;">Copias:</span>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${Math.max(0, count - 1)})" style="background:#334155; border:none; width:24px; height:24px; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">-</button>
-                  <span style="font-weight:bold; color:#fbbf24; font-family:monospace; min-width:20px; text-align:center; font-size: 0.9rem;">${count}</span>
-                  <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${count + 1})" style="background:#334155; border:none; width:24px; height:24px; border-radius:6px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">+</button>
-                </div>
-              </div>
-
-              <!-- Nivel de Desquicie -->
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:var(--text2); font-weight: 500;">Desquicie:</span>
-                <select onchange="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'level', parseInt(this.value))" style="background:#1e1b4b; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#c084fc; font-weight:bold; padding:4px 8px; font-size:0.8rem; outline:none; cursor:pointer;">
-                  <option value="1" ${level === 1 ? 'selected' : ''}>⭐ 1</option>
-                  <option value="2" ${level === 2 ? 'selected' : ''}>⭐⭐ 2</option>
-                  <option value="3" ${level === 3 ? 'selected' : ''}>⭐⭐⭐ 3</option>
-                  <option value="4" ${level === 4 ? 'selected' : ''}>⭐⭐⭐⭐ 4</option>
-                  <option value="5" ${level === 5 ? 'selected' : ''}>👑⭐⭐⭐⭐⭐ 5</option>
-                </select>
-              </div>
-
-              <!-- Foil y Firmada en un row -->
-              <div style="display:flex; justify-content:space-between; gap:8px; margin-top:2px;">
-                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'foil', ${!foil})" style="flex:1; background:${foil ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${foil ? 'transparent' : 'rgba(255,255,255,0.1)'}; color:${foil ? '#fff' : 'var(--text2)'}; font-size:0.7rem; padding:6px; border-radius:6px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
-                  🌈 ${foil ? 'FOIL' : 'NORMAL'}
-                </button>
-                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'signed', ${!signed})" style="flex:1; background:${signed ? 'linear-gradient(135deg, #10b981, #047857)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${signed ? 'transparent' : 'rgba(255,255,255,0.1)'}; color:${signed ? '#fff' : 'var(--text2)'}; font-size:0.7rem; padding:6px; border-radius:6px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
-                  🖋️ ${signed ? 'FIRMADO' : 'S/ FIRMA'}
-                </button>
-              </div>
-
-              <!-- Eliminar esta carta individual -->
-              <button onclick="adminDeletePlayerCard('${userKey}', '${username}', '${card.id}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; color:#ef4444; border-radius:6px; padding:6px; font-size:0.75rem; font-weight:bold; margin-top:4px; cursor:pointer; transition:all 0.15s; font-family:'Barlow Condensed', sans-serif; letter-spacing:0.5px;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">
-                🗑️ ELIMINAR CROMO
-              </button>
-
+      return `
+        <div style="border: 2px solid ${borderCol}; border-radius: 12px; background:#120c24; display:flex; flex-direction:column; overflow:hidden; position:relative; box-shadow:0 6px 16px rgba(0,0,0,0.6); padding:10px; gap:8px; height: 230px; box-sizing: border-box; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          
+          <!-- Cabecera cromo -->
+          <div style="display:flex; gap:10px; align-items:center;">
+            <img src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="width:45px; height:45px; border-radius:8px; object-fit:cover; border:2px solid ${borderCol}; background: #0b0716;">
+            <div style="flex:1; overflow:hidden; text-align: left;">
+              <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:0.95rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.2;">${card.name}</div>
+              <div style="font-size:0.65rem; color:${borderCol}; font-weight:bold; text-transform:uppercase; font-family:monospace;">${card.baseRarity.name}</div>
             </div>
           </div>
-        `;
-      } else {
-        // Cromo no obtenido
-        return `
-          <div style="border: 2px dashed rgba(255,255,255,0.12); border-radius: 14px; background:rgba(0,0,0,0.5); display:flex; flex-direction:column; overflow:hidden; position:relative; padding:12px; gap:10px; opacity:0.65; justify-content:space-between; height: 260px; box-sizing:border-box;">
-            <div style="display:flex; gap:12px; align-items:center;">
-              <div style="width:55px; height:55px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:#888; border: 2px dashed rgba(255,255,255,0.15);">?</div>
-              <div style="flex:1; overflow:hidden;">
-                <div style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:1.05rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align: left;">${card.name}</div>
-                <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; font-family:monospace; text-align: left;">${card.baseRarity.name}</div>
+
+          <!-- Controles de Edición -->
+          <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:6px; display:flex; flex-direction:column; gap:6px; font-size:0.75rem; flex: 1; justify-content: space-between;">
+            
+            <!-- Cantidad / Repetidos -->
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--text2); font-weight: 500;">Copias:</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${Math.max(0, count - 1)})" style="background:#334155; border:none; width:20px; height:20px; border-radius:4px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">-</button>
+                <span style="font-weight:bold; color:#fbbf24; font-family:monospace; min-width:16px; text-align:center; font-size: 0.8rem;">${count}</span>
+                <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'count', ${count + 1})" style="background:#334155; border:none; width:20px; height:20px; border-radius:4px; color:#fff; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: background 0.15s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">+</button>
               </div>
             </div>
-            
-            <button onclick="adminAddPlayerCard('${userKey}', '${username}', '${card.id}')" style="width:100%; background:rgba(34,197,94,0.15); border:1px solid #22c55e; color:#4ade80; border-radius:6px; padding:10px; font-size:0.8rem; font-weight:bold; cursor:pointer; transition:all 0.2s; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px;" onmouseover="this.style.background='#22c55e'; this.style.color='#fff';" onmouseout="this.style.background='rgba(34,197,94,0.15)'; this.style.color='#4ade80';">
-              ➕ AÑADIR CROMO
+
+            <!-- Nivel de Desquicie -->
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--text2); font-weight: 500;">Desquicie:</span>
+              <select onchange="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'level', parseInt(this.value))" style="background:#1e1b4b; border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#c084fc; font-weight:bold; padding:2px 4px; font-size:0.75rem; outline:none; cursor:pointer;">
+                <option value="1" ${level === 1 ? 'selected' : ''}>⭐ 1</option>
+                <option value="2" ${level === 2 ? 'selected' : ''}>⭐⭐ 2</option>
+                <option value="3" ${level === 3 ? 'selected' : ''}>⭐⭐⭐ 3</option>
+                <option value="4" ${level === 4 ? 'selected' : ''}>⭐⭐⭐⭐ 4</option>
+                <option value="5" ${level === 5 ? 'selected' : ''}>👑⭐ 5</option>
+              </select>
+            </div>
+
+            <!-- Foil y Firmada en un row -->
+            <div style="display:flex; justify-content:space-between; gap:6px;">
+              <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'foil', ${!foil})" style="flex:1; background:${foil ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${foil ? 'transparent' : 'rgba(255,255,255,0.03)'}; color:${foil ? '#fff' : 'var(--text2)'}; font-size:0.65rem; padding:4px; border-radius:4px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
+                🌈 ${foil ? 'FOIL' : 'NORMAL'}
+              </button>
+              <button onclick="adminUpdatePlayerCardField('${userKey}', '${username}', '${card.id}', 'signed', ${!signed})" style="flex:1; background:${signed ? 'linear-gradient(135deg, #10b981, #047857)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${signed ? 'transparent' : 'rgba(255,255,255,0.03)'}; color:${signed ? '#fff' : 'var(--text2)'}; font-size:0.65rem; padding:4px; border-radius:4px; font-weight:bold; cursor:pointer; transition:all 0.15s;">
+                🖋️ ${signed ? 'FIRMADO' : 'S/ FIRMA'}
+              </button>
+            </div>
+
+            <!-- Eliminar esta carta individual -->
+            <button onclick="adminDeletePlayerCard('${userKey}', '${username}', '${card.id}')" style="background:rgba(220,38,38,0.15); border:1px solid #dc2626; color:#ef4444; border-radius:4px; padding:4px; font-size:0.7rem; font-weight:bold; cursor:pointer; transition:all 0.15s; font-family:'Barlow Condensed', sans-serif;" onmouseover="this.style.background='#dc2626'; this.style.color='#fff';" onmouseout="this.style.background='rgba(220,38,38,0.15)'; this.style.color='#ef4444';">
+              🗑️ ELIMINAR CROMO
             </button>
           </div>
-        `;
-      }
+        </div>
+      `;
     }).join('');
 
     grid.innerHTML = html;
@@ -1645,7 +1858,8 @@ async function adminUpdatePlayerCardField(userKey, username, cardId, field, valu
       await db.ref(`users/${userKey}/album/cards/${cardId}/obtainedAt`).set(firebase.database.ServerValue.TIMESTAMP);
     }
 
-    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    const queryEl = document.getElementById("admin-manage-card-search");
+    const query = queryEl ? queryEl.value.trim().toLowerCase() : "";
     adminRenderManageCardsGrid(userKey, username, query);
   } catch (error) {
     alert("Error al actualizar campo: " + error.message);
@@ -1658,29 +1872,11 @@ async function adminDeletePlayerCard(userKey, username, cardId) {
     const db = firebase.database();
     await db.ref(`users/${userKey}/album/cards/${cardId}`).remove();
 
-    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    const queryEl = document.getElementById("admin-manage-card-search");
+    const query = queryEl ? queryEl.value.trim().toLowerCase() : "";
     adminRenderManageCardsGrid(userKey, username, query);
   } catch (error) {
     alert("Error al eliminar cromo: " + error.message);
-  }
-}
-
-// Añadir un cromo al inventario
-async function adminAddPlayerCard(userKey, username, cardId) {
-  try {
-    const db = firebase.database();
-    await db.ref(`users/${userKey}/album/cards/${cardId}`).set({
-      count: 1,
-      level: 1,
-      signed: false,
-      foil: false,
-      obtainedAt: firebase.database.ServerValue.TIMESTAMP
-    });
-
-    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
-    adminRenderManageCardsGrid(userKey, username, query);
-  } catch (error) {
-    alert("Error al añadir cromo: " + error.message);
   }
 }
 
@@ -1699,13 +1895,13 @@ async function adminDeleteAllCards(userKey, username) {
       alert(`✅ Se han eliminado todos los cromos de "${username}" con éxito.`);
     }
 
-    const query = document.getElementById("admin-manage-card-search").value.trim().toLowerCase();
+    const queryEl = document.getElementById("admin-manage-card-search");
+    const query = queryEl ? queryEl.value.trim().toLowerCase() : "";
     adminRenderManageCardsGrid(userKey, username, query);
   } catch (error) {
     alert("Error al eliminar los cromos: " + error.message);
   }
 }
-
 // ── CONSOLA DE ADMINISTRADOR PREMIUM Y SISTEMA DE MANTENIMIENTO ──
 
 async function renderAdminDashboardPage() {
@@ -1720,7 +1916,7 @@ async function renderAdminDashboardPage() {
     const style = document.createElement("style");
     style.id = "admin-hide-other-sections-style";
     style.textContent = `
-      body.admin-mode-active > *:not(#admin-dashboard):not(script):not(#global-maintenance-overlay):not(#admin-announcement-bar) {
+      body.admin-mode-active > *:not(#admin-dashboard):not(script):not(#global-maintenance-overlay):not(#admin-announcement-bar):not(#global-announcement-marquee) {
         display: none !important;
       }
       body.admin-mode-active {
@@ -1812,9 +2008,23 @@ async function renderAdminDashboardPage() {
               <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
                 <label style="font-family:'Barlow Condensed',sans-serif; font-size:0.85rem; color:var(--text2); text-transform:uppercase;">📢 Mensaje de Anuncio Global</label>
                 <input type="text" id="admin-announcement-input" class="auth-inp" placeholder="Escribe el aviso comunitario..." style="margin:0;">
-                <div style="display:flex; gap:10px; margin-top:4px;">
-                  <button onclick="publishGlobalAnnouncement()" class="q-btn" style="flex:1; background:var(--accent); color:#000; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:8px; border:none; cursor:pointer; border-radius:6px;">Publicar</button>
-                  <button onclick="clearGlobalAnnouncement()" class="q-btn" style="flex:1; background:rgba(255,255,255,0.08); color:#fff; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:8px; border:none; cursor:pointer; border-radius:6px;">Quitar</button>
+                
+                <!-- Duración temporizada select -->
+                <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; text-align: left;">
+                  <label style="font-family:'Barlow Condensed',sans-serif; font-size:0.75rem; color:var(--text2); text-transform:uppercase;">⏳ Duración del Anuncio:</label>
+                  <select id="admin-announcement-duration" class="auth-inp" style="margin:0; background:#140e22; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:0.85rem; height:38px; padding:4px 8px; border-radius:8px;">
+                    <option value="always">Siempre visible (Sin temporizador)</option>
+                    <option value="60000">1 Minuto</option>
+                    <option value="300000">5 Minutos</option>
+                    <option value="600000">10 Minutos</option>
+                    <option value="1800000">30 Minutos</option>
+                    <option value="3600000">1 Hora</option>
+                  </select>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                  <button onclick="publishGlobalAnnouncement()" class="q-btn" style="flex:1; background:var(--accent); color:#000; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border:none; cursor:pointer; border-radius:8px; text-transform:uppercase;">📢 Publicar Aviso</button>
+                  <button onclick="clearGlobalAnnouncement()" class="q-btn" style="flex:1; background:rgba(239, 68, 68, 0.2); border:1px solid #ef4444; color:#f87171; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; cursor:pointer; border-radius:8px; text-transform:uppercase;">🗑️ Finalizar Aviso</button>
                 </div>
               </div>
             </div>
@@ -1898,7 +2108,15 @@ async function loadAdminDashboardData() {
 
   // Escuchar anuncio para el campo
   db.ref("system_announcement").once("value", (snap) => {
-    const text = snap.val() || "";
+    const val = snap.val();
+    let text = "";
+    if (val) {
+      if (typeof val === "object") {
+        text = val.text || "";
+      } else {
+        text = val;
+      }
+    }
     const inp = document.getElementById("admin-announcement-input");
     if (inp) inp.value = text;
   });
@@ -1934,7 +2152,7 @@ function renderAdminDashboardUsersList(users, query = "") {
         <td style="padding:8px 5px; text-align:center;">
           <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
             <button onclick="adminDashboardGiveCoins('${key}', '${username}')" style="background:rgba(240,192,32,0.12); border:1px solid var(--accent); color:var(--accent); padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">+🪙</button>
-            <button onclick="adminDashboardManageCards('${key}', '${username}')" style="background:rgba(168,85,247,0.12); border:1px solid #c084fc; color:#c084fc; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">🃏 Mazos</button>
+            <button onclick="adminDashboardManageCards('${key}', '${username}')" style="background:rgba(168,85,247,0.12); border:1px solid #c084fc; color:#c084fc; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">🎛️ Gestionar</button>
             <button onclick="adminDashboardResetStats('${key}', '${username}')" style="background:rgba(96,165,250,0.12); border:1px solid #60a5fa; color:#60a5fa; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">🔄 Reset</button>
             <button onclick="adminDashboardDeleteUser('${key}', '${username}')" style="background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">❌</button>
           </div>
@@ -1980,13 +2198,35 @@ async function toggleGlobalMaintenance() {
 
 async function publishGlobalAnnouncement() {
   const text = document.getElementById("admin-announcement-input").value.trim();
+  const durationVal = document.getElementById("admin-announcement-duration").value;
+  
+  if (!text) {
+    alert("Por favor, escribe un texto para el anuncio.");
+    return;
+  }
+
   const db = firebase.database();
-  await db.ref("system_announcement").set(text);
+  let announcementData = null;
+
+  if (durationVal === "always") {
+    announcementData = {
+      text: text,
+      expiresAt: null
+    };
+  } else {
+    const durationMs = parseInt(durationVal);
+    announcementData = {
+      text: text,
+      expiresAt: Date.now() + durationMs
+    };
+  }
+
+  await db.ref("system_announcement").set(announcementData);
   
   if (window.showLqsaAlert) {
     window.showLqsaAlert("📢 Anuncio global publicado con éxito en la comunidad.", "AVISO PUBLICADO", "success");
   } else {
-    alert("📢 Anuncio global publicado.");
+    alert("📢 Anuncio global publicado con éxito.");
   }
 }
 
@@ -2023,10 +2263,31 @@ async function adminRainCoins(amount) {
   }
 }
 
-function updateGlobalAnnouncementBanner(text) {
+let announcementTimeoutId = null;
+
+function updateGlobalAnnouncementBanner(snapVal) {
+  let text = "";
+  let expiresAt = null;
+
+  if (snapVal) {
+    if (typeof snapVal === "object") {
+      text = snapVal.text || "";
+      expiresAt = snapVal.expiresAt || null;
+    } else {
+      text = snapVal;
+    }
+  }
+
+  // Limpiar temporizador activo anterior
+  if (announcementTimeoutId) {
+    clearTimeout(announcementTimeoutId);
+    announcementTimeoutId = null;
+  }
+
   let bar = document.getElementById("global-announcement-marquee");
-  
-  if (!text || text.trim() === "") {
+
+  // Si no hay texto, está vacío o ha expirado, quitar
+  if (!text || text.trim() === "" || (expiresAt && Date.now() > expiresAt)) {
     if (bar) bar.remove();
     document.body.style.paddingTop = "0px";
     return;
@@ -2048,6 +2309,18 @@ function updateGlobalAnnouncementBanner(text) {
   `;
 
   document.body.style.paddingTop = "32px";
+
+  // Si hay un tiempo de expiración futuro, configurar temporizador automático para ocultarlo
+  if (expiresAt) {
+    const msLeft = expiresAt - Date.now();
+    if (msLeft > 0) {
+      announcementTimeoutId = setTimeout(() => {
+        const currentBar = document.getElementById("global-announcement-marquee");
+        if (currentBar) currentBar.remove();
+        document.body.style.paddingTop = "0px";
+      }, msLeft);
+    }
+  }
 }
 
 function handleMaintenanceScreen(active) {

@@ -3150,7 +3150,9 @@ function renderCardDuelLobbyHtml(overlay, ownedCards) {
     const level = userCard.level || 1;
     const signed = !!userCard.signed;
     const inDeck = localCardDuelDeck.includes(card.id);
-    const lType = LQSA_TYPES[card.combatType || "Inquilino"];
+    const rawType = card.combatType || "Inquilino";
+    const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
+    const lType = LQSA_TYPES[rawType] || LQSA_TYPES[primaryType] || LQSA_TYPES["Inquilino"];
 
     return `
             <div class="workshop-card-item" style="border:1px solid ${inDeck ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.06)'}; background:${inDeck ? 'rgba(220,38,38,0.04)' : 'rgba(255,255,255,0.02)'}; padding: 10px;">
@@ -3668,8 +3670,13 @@ function renderCardBattleScreen(room) {
   const recentLogs = logList.slice(-4).reverse();
 
   // Renderizar Elementos
-  const myType = LQSA_TYPES[myActiveCard.combatType || "Inquilino"];
-  const oppType = LQSA_TYPES[oppActiveCard.combatType || "Inquilino"];
+  const myRawType = myActiveCard.combatType || "Inquilino";
+  const myPrimary = myRawType.includes(" + ") ? myRawType.split(" + ")[0] : myRawType;
+  const myType = LQSA_TYPES[myRawType] || LQSA_TYPES[myPrimary] || LQSA_TYPES["Inquilino"];
+
+  const oppRawType = oppActiveCard.combatType || "Inquilino";
+  const oppPrimary = oppRawType.includes(" + ") ? oppRawType.split(" + ")[0] : oppRawType;
+  const oppType = LQSA_TYPES[oppRawType] || LQSA_TYPES[oppPrimary] || LQSA_TYPES["Inquilino"];
 
   // Porcentaje de vida HP
   const myHpPct = Math.round((myActiveCard.hp / myActiveCard.maxHp) * 100);
