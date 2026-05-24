@@ -1,4 +1,4 @@
-﻿/* ════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    LQSACatena — Sistema de Autenticación
    y Estadísticas Basado Directamente en Realtime Database
    (Evita errores de Firebase Auth Provider deshabilitado)
@@ -1916,7 +1916,7 @@ async function renderAdminDashboardPage() {
     const style = document.createElement("style");
     style.id = "admin-hide-other-sections-style";
     style.textContent = `
-      body.admin-mode-active > *:not(#admin-dashboard):not(script):not(#global-maintenance-overlay):not(#admin-announcement-bar):not(#global-announcement-marquee) {
+      body.admin-mode-active > *:not(#admin-dashboard):not(#admin-manage-cards-modal):not(#admin-gift-modal):not(#auth-modal):not(script):not(#global-maintenance-overlay):not(#admin-announcement-bar):not(#global-announcement-marquee) {
         display: none !important;
       }
       body.admin-mode-active {
