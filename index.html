@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LQSACatena – Quién es Quién (La que se avecina)</title>
+  <meta name="description"
+    content="El clásico juego de ¿Quién es quién? con los vecinos de Mirador de Montepinar (La que se avecina). Adivina el personaje secreto del rival.">
+  <link rel="icon" type="image/svg+xml" href="img/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Barlow+Condensed:wght@400;600;700&amp;family=Barlow:wght@400;600&amp;display=swap">
+  <meta name="theme-color" content="#f0c020">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sobres.css">
+  <style>
+    /* Anular el max-width global de main para esta página */
+    main {
+      max-width: 1440px;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    /* ══════════════════════════════════════
+       LAYOUT PRINCIPAL
+    ══════════════════════════════════════ */
+    .quien-wrap {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px 16px 60px;
+      display: grid;
+      grid-template-columns: 240px 1fr 240px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* Durante setup: ocultar contenido izquierdo pero mantener columnas simétricas */
+    .quien-wrap.is-setup .quien-left {
+      visibility: hidden;
+    }
+
+    /* Idle: colapsar grid y centrar solo el panel de bienvenida */
+    .quien-wrap:not(.is-setup):not(.is-playing) {
+      grid-template-columns: 1fr;
+    }
+
+    .quien-wrap:not(.is-setup):not(.is-playing) .quien-left,
+    .quien-wrap:not(.is-setup):not(.is-playing) .quien-right {
+      display: none;
+    }
+
+    .quien-wrap:not(.is-setup):not(.is-playing) #quien-board {
+      display: none;
+    }
+
+    .quien-wrap:not(.is-setup):not(.is-playing) .quien-board-title {
+      display: none !important;
+    }
+
+    .quien-wrap:not(.is-setup):not(.is-playing) .quien-3d-scene {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 55vh;
+    }
+
+    /* Panel de bienvenida (solo en idle) */
+    .quien-play-wrap {
+      text-align: center;
+      padding: 32px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .quien-wrap.is-setup .quien-play-wrap,
+    .quien-wrap.is-playing .quien-play-wrap {
+      display: none;
+    }
+
+    .quien-play-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      color: var(--accent);
+      letter-spacing: 5px;
+      margin: 0;
+      text-shadow: 0 0 24px rgba(240, 192, 32, 0.35);
+    }
+
+    .quien-play-desc {
+      color: var(--text2);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0;
+    }
+
+    .quien-play-big-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      padding: 14px 48px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 24px rgba(240, 192, 32, 0.4);
+    }
+
+    .quien-play-big-btn:hover {
+      opacity: 0.88;
+      transform: scale(1.04);
+    }
+
+    .quien-play-help-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.95rem;
+      padding: 8px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .quien-play-help-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    /* Título encima del tablero (solo en setup) */
+    .quien-board-title {
+      display: none;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .quien-wrap.is-setup .quien-board-title {
+      display: block;
+    }
+
+    .quien-board-title h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.6rem;
+      color: var(--accent);
+      letter-spacing: 5px;
+      margin: 0 0 6px;
+      text-shadow: 0 0 24px rgba(240, 192, 32, 0.35);
+    }
+
+    .quien-board-title p {
+      font-size: 1rem;
+      color: var(--text2);
+      margin: 0;
+    }
+
+    @media (max-width: 900px) {
+      .quien-wrap {
+        grid-template-columns: 220px 1fr 220px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .quien-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .quien-right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .quien-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ══════════════════════════════════════
+       PANEL IZQUIERDO
+    ══════════════════════════════════════ */
+    .quien-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #quien-status {
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(240, 192, 32, 0.2);
+      border-radius: 16px;
+      padding: 22px 18px;
+      text-align: center;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quien-intro-icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+
+    .quien-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.9rem;
+      color: var(--accent);
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+    }
+
+    .quien-desc {
+      font-size: 0.88rem;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    .quien-remaining {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text2);
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+
+    .quien-remaining strong {
+      color: var(--accent);
+    }
+
+    .turn-badge {
+      display: inline-block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: rgba(240, 192, 32, 0.12);
+      border: 1px solid rgba(240, 192, 32, 0.35);
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .quien-question {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .quien-question-asked {
+      font-size: 0.82rem;
+      color: var(--text2);
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+
+    .quien-answer-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.6rem;
+      letter-spacing: 4px;
+      animation: popIn 0.22s ease;
+    }
+
+    .answer-yes .quien-answer-badge {
+      color: #4ade80;
+    }
+
+    .answer-no .quien-answer-badge {
+      color: #f87171;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInMsg {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .quien-btns {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .quien-btn-yes,
+    .quien-btn-no {
+      padding: 11px 28px;
+      border-radius: 50px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      border: 2px solid;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .quien-btn-yes:active,
+    .quien-btn-no:active {
+      transform: scale(0.96);
+    }
+
+    .quien-btn-yes {
+      background: rgba(22, 163, 74, 0.16);
+      color: #4ade80;
+      border-color: rgba(22, 163, 74, 0.5);
+    }
+
+    .quien-btn-yes:hover {
+      background: rgba(22, 163, 74, 0.3);
+    }
+
+    .quien-btn-no {
+      background: rgba(220, 38, 38, 0.13);
+      color: #f87171;
+      border-color: rgba(220, 38, 38, 0.45);
+    }
+
+    .quien-btn-no:hover {
+      background: rgba(220, 38, 38, 0.26);
+    }
+
+    .quien-result {
+      width: 100%;
+    }
+
+    .quien-result-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.9rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .quien-guess-avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid var(--accent);
+      margin: 0 auto 10px;
+    }
+
+    .quien-guess-avatar.win-avatar {
+      border-color: #4ade80;
+      box-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+    }
+
+    .quien-guess-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+    }
+
+    .quien-guess-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.55rem;
+      letter-spacing: 3px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .quien-secret-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+
+    /* Panel de preguntas */
+    #quien-questions {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .q-group {
+      margin-bottom: 12px;
+    }
+
+    .q-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .q-group-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.68rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .q-group-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .q-btn {
+      padding: 4px 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      transition: background 0.14s, border-color 0.14s;
+    }
+
+    .q-btn:hover:not(:disabled) {
+      background: rgba(240, 192, 32, 0.16);
+      border-color: rgba(240, 192, 32, 0.5);
+      color: var(--accent);
+    }
+
+    .q-btn:disabled {
+      opacity: 0.38;
+      cursor: default;
+    }
+
+    .q-btn.asked-yes {
+      background: rgba(22, 163, 74, 0.15);
+      border-color: rgba(22, 163, 74, 0.45);
+      color: #4ade80;
+    }
+
+    .q-btn.asked-no {
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(220, 38, 38, 0.4);
+      color: #f87171;
+    }
+
+    /* ══════════════════════════════════════
+       TABLERO 3D
+    ══════════════════════════════════════ */
+    .quien-3d-scene {
+      perspective: 1600px;
+      perspective-origin: 50% 30%;
+      padding: 14px 10px 14px;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(240, 192, 32, 0.07) 0%, transparent 70%),
+        rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(240, 192, 32, 0.1);
+      border-radius: 20px;
+      overflow: visible;
+    }
+
+    /* Tablero con inclinación suave */
+    .quien-3d-board {
+      transform: rotateX(18deg);
+      transform-style: preserve-3d;
+    }
+
+    /* Filas compactas */
+    .quien-3d-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 5px;
+      transform-style: preserve-3d;
+    }
+
+    .quien-3d-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Contenedor de tarjeta */
+    .quien-card-wrapper {
+      width: 64px;
+      height: 80px;
+      position: relative;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      pointer-events: auto;
+    }
+
+    .quien-card-wrapper:hover {
+      z-index: 10;
+    }
+
+    /* Tarjeta */
+    .quien-card-3d {
+      width: 100%;
+      height: 100%;
+      border: 2px solid rgba(240, 192, 32, 0.35);
+      border-radius: 7px;
+      background: rgba(8, 8, 8, 0.92);
+      overflow: hidden;
+      cursor: pointer;
+      transform-origin: bottom center;
+      transform: translateY(0) scale(1);
+      transition:
+        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s,
+        border-color 0.15s,
+        box-shadow 0.15s;
+      position: relative;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+    }
+
+    .quien-card-3d:not(.eliminated):not(.my-secret):hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 13px rgba(240, 192, 32, 0.5);
+      transform: translateY(-5px) scale(1.1);
+      z-index: 10;
+    }
+
+    /* Carta eliminada: se dobla hacia adelante */
+    .quien-card-3d.eliminated {
+      transform: rotateX(82deg);
+      opacity: 0.12;
+      pointer-events: none;
+    }
+
+    /* Carta ganadora */
+    .quien-card-3d.winner {
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 18px rgba(74, 222, 128, 0.55) !important;
+      opacity: 1 !important;
+      transform: translateY(-7px) scale(1) !important;
+    }
+
+    /* Animación de repartir cartas */
+    .quien-card-3d.deal-anim {
+      opacity: 0;
+      transform: translateY(-40px) scale(0.8) rotateX(20deg);
+      animation: dealIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation-delay: calc(var(--card-idx) * 12ms);
+    }
+
+    @keyframes dealIn {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotateX(0deg);
+      }
+    }
+
+    /* Personaje secreto del jugador (modo setup) */
+    .quien-card-3d.my-secret {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 12px rgba(240, 192, 32, 0.5) !important;
+    }
+
+    .quien-card-3d img {
+      width: 100%;
+      height: calc(100% - 18px);
+      object-fit: cover;
+      object-position: top;
+      display: block;
+    }
+
+    .quien-card-3d .card-name {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'Barlow Condensed', sans-serif;
+      background: rgba(14, 14, 24, 0.92);
+      border-top: 1px solid rgba(240, 192, 32, 0.25);
+      color: var(--accent);
+      padding: 1px 2px;
+      letter-spacing: 0.4px;
+      line-height: 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Columna derecha: personaje elegido ── */
+    .quien-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      position: sticky;
+      top: 20px;
+      padding-top: 60px;
+    }
+
+    .quien-my-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.68rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .quien-my-card-placeholder {
+      width: 100px;
+      height: 126px;
+      border: 2px dashed rgba(240, 192, 32, 0.25);
+      border-radius: 10px;
+      background: rgba(240, 192, 32, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem;
+      color: rgba(240, 192, 32, 0.25);
+    }
+
+    .quien-my-card-filled {
+      width: 100px;
+      height: 126px;
+      border: 3px solid var(--accent);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(240, 192, 32, 0.45), 0 0 40px rgba(240, 192, 32, 0.15);
+    }
+
+    .quien-my-card-filled img {
+      width: 100%;
+      height: calc(100% - 18px);
+      object-fit: cover;
+      object-position: top;
+      display: block;
+    }
+
+    .quien-my-card-filled .card-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.78rem;
+      text-align: center;
+      background: rgba(240, 192, 32, 0.12);
+      color: var(--accent);
+      padding: 2px 4px;
+      line-height: 19px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Bocadillo de frase mítica */
+    .quien-bocadillo {
+      width: 100%;
+      background: #fff;
+      color: #111;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.35;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+      margin-top: 14px;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: popBocadillo 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards;
+      position: relative;
+    }
+
+    .quien-bocadillo::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 9px 10px 9px;
+      border-style: solid;
+      border-color: transparent transparent #fff transparent;
+    }
+
+    .bocadillo-emoji {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+
+    @keyframes popBocadillo {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* En móvil quitamos el bocadillo para ahorrar espacio */
+    @media (max-width: 720px) {
+      .quien-bocadillo {
+        display: none;
+      }
+    }
+
+    /* Tooltip de personaje secreto */
+    .quien-right {
+      position: relative;
+    }
+
+    /* Historial de preguntas */
+    .quien-history {
+      margin-top: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 10px 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .quien-history-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin: 0 0 8px;
+    }
+
+    .quien-history-list {
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      /* scrollbar thin */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+
+    .quien-history-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .quien-history-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .quien-history-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    .quien-history-item {
+      font-size: 0.74rem;
+      line-height: 1.3;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid transparent;
+    }
+
+    .quien-history-item.hist-yes {
+      border-left-color: #4ade80;
+    }
+
+    .quien-history-item.hist-no {
+      border-left-color: #f87171;
+    }
+
+    .quien-history-item .hist-who {
+      font-size: 0.65rem;
+      opacity: 0.55;
+      margin-bottom: 1px;
+    }
+
+    .quien-history-item .hist-q {
+      color: var(--text);
+    }
+
+    .quien-history-item .hist-badge {
+      float: right;
+      font-weight: 700;
+      font-size: 0.72rem;
+    }
+
+    .hist-yes .hist-badge {
+      color: #4ade80;
+    }
+
+    .hist-no .hist-badge {
+      color: #f87171;
+    }
+
+    /* Manual Discard Mode Styles */
+    .quien-wrap.manual-mode .quien-card-3d.eliminated {
+      pointer-events: auto !important;
+      cursor: pointer;
+    }
+
+    .quien-wrap.manual-mode .quien-card-3d:not(.my-secret):hover {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 13px rgba(239, 68, 68, 0.5) !important;
+    }
+
+    .quien-wrap.manual-mode .quien-card-3d.eliminated:hover {
+      opacity: 0.6 !important;
+      transform: rotateX(40deg) !important;
+    }
+
+    .quien-secret-tooltip {
+      display: none;
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50px;
+      width: 220px;
+      background: rgba(10, 10, 10, 0.97);
+      border: 1px solid rgba(240, 192, 32, 0.4);
+      border-radius: 12px;
+      padding: 14px 16px;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.7);
+    }
+
+    .quien-secret-tooltip::after {
+      content: '';
+      position: absolute;
+      right: -7px;
+      top: 28px;
+      border: 7px solid transparent;
+      border-left-color: rgba(240, 192, 32, 0.4);
+      border-right: none;
+    }
+
+    .quien-my-card-filled:hover~.quien-secret-tooltip,
+    .quien-secret-tooltip:hover {
+      display: block;
+    }
+
+    .quien-right:has(.quien-my-card-filled:hover) .quien-secret-tooltip {
+      display: block;
+    }
+
+    .quien-tooltip-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(240, 192, 32, 0.2);
+      padding-bottom: 6px;
+    }
+
+    .quien-tooltip-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text2);
+      line-height: 1.3;
+    }
+
+    .quien-tooltip-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .quien-tooltip-key {
+      color: rgba(240, 192, 32, 0.65);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      min-width: 72px;
+      flex-shrink: 0;
+    }
+
+    .quien-tooltip-val {
+      color: var(--text);
+    }
+
+    /* Botón comenzar en panel derecho */
+    .quien-start-btn {
+      margin-top: 6px;
+      padding: 10px 22px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 2px;
+      background: var(--accent);
+      color: #111;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(240, 192, 32, 0.4);
+      transition: transform 0.1s, box-shadow 0.15s;
+      display: none;
+    }
+
+    .quien-start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 24px rgba(240, 192, 32, 0.6);
+    }
+
+    .quien-start-btn:active {
+      transform: scale(0.97);
+    }
+
+    .quien-start-btn.visible {
+      display: block;
+    }
+
+    /* ══════════════════════════════════════
+       OVERLAYS (selector de modo + lobby)
+    ══════════════════════════════════════ */
+    .quien-mode-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .quien-mode-box {
+      background: rgba(10, 10, 10, 0.97);
+      border: 1px solid rgba(240, 192, 32, 0.3);
+      border-radius: 24px;
+      padding: 36px 32px 32px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .quien-mode-box .quien-intro-icon {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+    }
+
+    .quien-mode-box .quien-title {
+      font-size: 2.2rem;
+      margin-bottom: 6px;
+    }
+
+    .quien-mode-box .quien-desc {
+      margin-bottom: 28px;
+    }
+
+    .quien-mode-btns {
+      display: flex;
+      gap: 14px;
+      flex-direction: column;
+    }
+
+    .quien-mode-btn {
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(240, 192, 32, 0.25);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .quien-mode-btn:hover {
+      background: rgba(240, 192, 32, 0.1);
+      border-color: rgba(240, 192, 32, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .quien-mode-btn:active {
+      transform: scale(0.98);
+    }
+
+    .quien-mode-btn.online-btn {
+      border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .quien-mode-btn.online-btn:hover {
+      background: rgba(96, 165, 250, 0.1);
+      border-color: rgba(96, 165, 250, 0.6);
+    }
+
+    .mode-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .mode-info {
+      text-align: left;
+    }
+
+    .mode-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      color: var(--text);
+      letter-spacing: 2px;
+      display: block;
+    }
+
+    .mode-sub {
+      font-size: 0.8rem;
+      color: var(--text2);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Lobby */
+    .lobby-back {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text2);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 8px 16px;
+      margin-bottom: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .lobby-back:hover {
+      color: #fff;
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+    }
+
+    .lobby-divider {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      margin: 20px 0;
+      position: relative;
+    }
+
+    .lobby-divider::before,
+    .lobby-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 38%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .lobby-divider::before {
+      left: 0;
+    }
+
+    .lobby-divider::after {
+      right: 0;
+    }
+
+    .lobby-join-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .lobby-input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(240, 192, 32, 0.25);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .lobby-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .lobby-input:focus {
+      outline: none;
+      border-color: rgba(240, 192, 32, 0.5);
+    }
+
+    .lobby-join-btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #111;
+      border: none;
+      cursor: pointer;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      transition: opacity 0.15s;
+    }
+
+    .lobby-join-btn:hover {
+      opacity: 0.88;
+    }
+
+    .lobby-error {
+      color: #f87171;
+      font-size: 0.8rem;
+      margin-top: 12px;
+      min-height: 18px;
+    }
+
+    /* Código de sala */
+    .online-room-code {
+      display: inline-block;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      letter-spacing: 8px;
+      color: var(--accent);
+      background: rgba(240, 192, 32, 0.1);
+      border: 1px solid rgba(240, 192, 32, 0.3);
+      border-radius: 12px;
+      padding: 8px 24px;
+      text-shadow: 0 0 20px rgba(240, 192, 32, 0.4);
+    }
+
+    /* ── Mobile styling is now fully optimized in style.css ── */
+
+    /* Tooltip flotante cartas del tablero */
+    .quien-card-tooltip {
+      display: none;
+      position: fixed;
+      z-index: 500;
+      width: 220px;
+      background: rgba(10, 10, 10, 0.97);
+      border: 1px solid rgba(240, 192, 32, 0.4);
+      border-radius: 12px;
+      padding: 14px 16px;
+      pointer-events: none;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.7);
+      animation: fadeInCardTip 0.13s ease;
+    }
+
+    .quien-card-tooltip.visible {
+      display: block;
+    }
+
+    @keyframes fadeInCardTip {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Chat de Sala Online (visible solo en partidas online) ── -->
+  <div id="room-chat-panel" style="
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 400;
+    width: 280px;
+    background: rgba(10,10,20,0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(240,192,32,0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    flex-direction: column;
+    overflow: hidden;
+  ">
+    <!-- Header del chat -->
+    <div style="
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 12px;
+      background:rgba(240,192,32,0.07);
+      border-bottom:1px solid rgba(240,192,32,0.12);
+      cursor:pointer;
+    " onclick="toggleRoomChat()">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--accent);">💬 Chat
+        de Sala</span>
+      <span id="room-chat-badge"
+        style="display:none;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:0.65rem;font-weight:bold;align-items:center;justify-content:center;font-family:sans-serif;">0</span>
+      <span id="room-chat-toggle-icon" style="color:var(--text2);font-size:0.8rem;">▲</span>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="room-chat-messages" style="
+      height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    ">
+      <p style="color:var(--text2);font-size:0.75rem;text-align:center;">El chat de sala está listo. ¡Di algo!</p>
+    </div>
+
+    <!-- Frases rápidas -->
+    <div id="room-chat-quick" style="
+      display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;
+      border-top:1px solid rgba(255,255,255,0.05);
+    ">
+      <button onclick="sendRoomQuickMsg('¡Bien jugado! 👏')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">👏 ¡Bien!</button>
+      <button onclick="sendRoomQuickMsg('¡Suerte! 🍀')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">🍀
+        ¡Suerte!</button>
+      <button onclick="sendRoomQuickMsg('¡Qué difícil! 😤')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">😤
+        ¡Difícil!</button>
+      <button onclick="sendRoomQuickMsg('¡Me caigo muerta! 🙈')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">🙈 ¡Me
+        caigo!</button>
+      <button onclick="sendRoomQuickMsg('¡Merengue, merengue! 🏆')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">🏆
+        ¡Merengue!</button>
+      <button onclick="sendRoomQuickMsg('😂😂😂')"
+        style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:20px;font-size:0.68rem;padding:3px 8px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--text2)';">😂😂😂</button>
+    </div>
+
+    <!-- Input libre -->
+    <div style="display:flex;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,0.05);">
+      <input id="room-chat-input" type="text" maxlength="80" placeholder="Escribe un mensaje..."
+        onkeydown="if(event.key==='Enter')sendRoomChatMessage()"
+        style="flex:1;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);font-family:sans-serif;font-size:0.78rem;padding:6px 9px;outline:none;transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+      <button onclick="sendRoomChatMessage()"
+        style="background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:bold;font-size:0.8rem;font-family:'Barlow Condensed',sans-serif;padding:0 12px;cursor:pointer;transition:transform 0.1s;"
+        onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">↑</button>
+    </div>
+  </div>
+
+
+  <header>
+    <div class="header-inner">
+      <a href="index.html" style="text-decoration:none">
+        <div class="logo"><span>LQSA</span>Catena</div>
+      </a>
+      <div class="subtitle">Adivina el personaje de «La que se avecina»</div>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-btn active">🏠 Inicio</a>
+      <a href="index.html" class="nav-btn active">🎭 Quién es Quién</a>
+      <a href="ranking.html" class="nav-btn">🏆 Ranking</a>
+      <a href="#" class="nav-btn" onclick="openAlbumUI(); return false;">📘 Álbum</a>
+    </nav>
+    <div class="coin-panel" onclick="openAlbumUI()" style="cursor:pointer; display:inline-flex; align-items:center; background:rgba(240,192,32,0.15); border:1px solid var(--accent); padding:4px 10px; border-radius:20px; font-family:'Barlow Condensed',sans-serif; font-weight:bold; color:#fff; gap:5px;">
+      🪙 <span id="global-coin-count">0</span>
+    </div>
+    <span class="auth-nav-item"></span>
+  </header>
+
+  <!-- ── Selector de modo ── -->
+  <div id="quien-mode-overlay" class="quien-mode-overlay" style="display:none">
+    <div class="quien-mode-box">
+      <button class="lobby-back" onclick="hideModeOverlay()" style="align-self:flex-start">← Volver</button>
+      
+      <!-- Banner de reconexión online -->
+      <div id="online-reconnect-banner" style="display: none; background: rgba(240, 192, 32, 0.15); border: 1px solid rgba(240, 192, 32, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #fef08a;">
+          <span style="font-size:1.2rem">🎮</span>
+          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida online activa.</span>
+        </div>
+        <button onclick="reconnectActiveOnlineGame()" class="q-btn" style="padding: 6px 14px; font-size: 0.82rem; background: var(--accent); color: #000; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
+          ⚡ Reconectar
+        </button>
+      </div>
+
+      <!-- Banner de reconexión duelo -->
+      <div id="duel-reconnect-banner" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #fca5a5;">
+          <span style="font-size:1.2rem">⚔️</span>
+          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida de duelo activa.</span>
+        </div>
+        <button onclick="reconnectActiveDuelGame()" class="q-btn" style="padding: 6px 14px; font-size: 0.82rem; background: #ef4444; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
+          ⚡ Reconectar
+        </button>
+      </div>
+
+      <div class="quien-intro-icon">🎭</div>
+      <h2 class="quien-title">QUIÉN ES QUIÉN</h2>
+      <p class="quien-desc">Elige cómo quieres jugar</p>
+      <div class="quien-mode-btns">
+        <button class="quien-mode-btn" onclick="selectGameMode('machine')">
+          <span class="mode-icon">🤖</span>
+          <div class="mode-info">
+            <span class="mode-label">vs IA Vecina</span>
+            <span class="mode-sub">Juega solo contra la máquina</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn online-btn" onclick="selectGameMode('online')">
+          <span class="mode-icon">👥</span>
+          <div class="mode-info">
+            <span class="mode-label">Duelo Online</span>
+            <span class="mode-sub">Juega contra otro vecino online</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn" onclick="selectGameMode('detective')"
+          style="border-color: rgba(168,85,247,0.35);">
+          <span class="mode-icon">🕵️</span>
+          <div class="mode-info">
+            <span class="mode-label">Modo Detective</span>
+            <span class="mode-sub">Adivina con 3 pistas y un único intento</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn" onclick="selectGameMode('contrarreloj')"
+          style="border-color: rgba(249,115,22,0.35);">
+          <span class="mode-icon">⚡</span>
+          <div class="mode-info">
+            <span class="mode-label">Modo Contrarreloj</span>
+            <span class="mode-sub">Ronda rápida con 45s por turno</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn" onclick="selectGameMode('duelo')" style="border-color: rgba(239,68,68,0.35);">
+          <span class="mode-icon">⚔️</span>
+          <div class="mode-info">
+            <span class="mode-label">Modo Duelo</span>
+            <span class="mode-sub">Hasta 8 jugadores adivinan al mismo personaje</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Lobby multijugador ── -->
+  <div id="quien-online-lobby" class="quien-mode-overlay" style="display:none">
+    <div class="quien-mode-box">
+      <button class="lobby-back" onclick="lobbyBack()">← Volver</button>
+      <div class="quien-intro-icon">👥</div>
+      <h2 class="quien-title">MULTIJUGADOR</h2>
+      <div class="quien-mode-btns">
+        <button class="quien-mode-btn" onclick="createOnlineRoom()">
+          <span class="mode-icon">🏠</span>
+          <div class="mode-info">
+            <span class="mode-label">Crear sala</span>
+            <span class="mode-sub">Genera un código para compartir con tu amigo</span>
+          </div>
+        </button>
+      </div>
+      <div class="lobby-divider">O ÚNETE CON UN CÓDIGO</div>
+      <div class="lobby-join-row">
+        <input id="quien-join-input" class="lobby-input" placeholder="ABCD-1234" maxlength="9"
+          onkeydown="if(event.key==='Enter') joinOnlineRoom()">
+        <button class="lobby-join-btn" onclick="joinOnlineRoom()">Entrar</button>
+      </div>
+      <p id="quien-lobby-error" class="lobby-error"></p>
+      <div id="online-rooms-list" style="width:100%;margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ── Lobby Modo Duelo ── -->
+  <div id="duel-lobby-overlay" class="quien-mode-overlay" style="display:none">
+    <div class="quien-mode-box">
+      <button class="lobby-back" onclick="hideDuelLobbyOverlay();showModeOverlay()">← Volver</button>
+      <div class="quien-intro-icon">⚔️</div>
+      <h2 class="quien-title">MODO DUELO</h2>
+      <p class="quien-desc">Hasta 8 jugadores compiten para adivinar el mismo personaje secreto. ¡El que lo adivine con
+        menos preguntas gana!</p>
+      <div class="quien-mode-btns">
+        <button class="quien-mode-btn" onclick="createDuelRoom()" style="border-color:rgba(239,68,68,0.35)">
+          <span class="mode-icon">🏆</span>
+          <div class="mode-info">
+            <span class="mode-label">Crear sala</span>
+            <span class="mode-sub">Tú eres el anfitrión del duelo</span>
+          </div>
+        </button>
+      </div>
+      <div class="lobby-divider">O ÚNETE CON UN CÓDIGO</div>
+      <div class="lobby-join-row">
+        <input id="duel-join-input" class="lobby-input" placeholder="ABCD-1234" maxlength="9"
+          onkeydown="if(event.key==='Enter') joinDuelRoom()">
+        <button class="lobby-join-btn" onclick="joinDuelRoom()">Entrar</button>
+      </div>
+      <p id="duel-lobby-error" class="lobby-error"></p>
+      <div id="duel-rooms-list" style="width:100%;margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ── Sala de espera Duelo ── -->
+  <div id="duel-waiting-overlay" class="quien-mode-overlay" style="display:none">
+    <div class="quien-mode-box" style="max-width:500px">
+      <div class="quien-intro-icon">⏳</div>
+      <h2 class="quien-title">SALA DE ESPERA</h2>
+      <p class="quien-desc">Comparte el código con tus amigos y espera a que se unan:</p>
+      <div class="online-room-code" id="duel-room-code-display" style="cursor:pointer"
+        onclick="navigator.clipboard?.writeText(this.textContent)">----</div>
+      <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center; margin-bottom: 12px;">
+        <button class="q-btn" onclick="copyDuelRoomCode(this)" style="padding: 6px 18px;">
+          📋 Copiar código
+        </button>
+        <button class="q-btn" onclick="openInviteFriendsModal()"
+          style="padding: 6px 18px; background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60a5fa;">
+          ✉️ Invitar a amigos
+        </button>
+      </div>
+      <p id="duel-players-count" style="color:var(--text2);font-size:0.85rem;margin:8px 0">0/8 jugadores</p>
+      <div id="duel-players-list" class="duel-waiting-players"></div>
+      <button id="duel-start-btn" class="quien-start-btn visible" onclick="startDuelGame()"
+        style="margin-top:16px;display:none">⚔️ ¡Iniciar Duelo!</button>
+      <p style="color:var(--text2);font-size:0.78rem;margin-top:10px">El anfitrión inicia la partida cuando todos estén
+        listos.</p>
+      <button class="lobby-back" onclick="exitDuelWaitingRoom()" style="margin-top:8px">← Salir de la sala</button>
+    </div>
+  </div>
+
+  <!-- ── Selector de dificultad ── -->
+  <div id="quien-diff-overlay" class="quien-mode-overlay" style="display:none">
+    <div class="quien-mode-box">
+      <button class="lobby-back" onclick="diffBack()" style="align-self:flex-start">← Volver</button>
+      <div class="quien-intro-icon">⚙️</div>
+      <h2 class="quien-title">MODALIDAD</h2>
+      <p class="quien-desc">¿Con cuántos personajes quieres jugar?</p>
+      <div class="quien-mode-btns">
+        <button class="quien-mode-btn" onclick="selectDifficulty('basico')">
+          <span class="mode-icon">🟢</span>
+          <div class="mode-info">
+            <span class="mode-label">Básico</span>
+            <span class="mode-sub">30 personajes aleatorios</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn" onclick="selectDifficulty('extenso')">
+          <span class="mode-icon">🟡</span>
+          <div class="mode-info">
+            <span class="mode-label">Extenso</span>
+            <span class="mode-sub">60 personajes aleatorios</span>
+          </div>
+        </button>
+        <button class="quien-mode-btn" onclick="selectDifficulty('dios')" style="border-color: rgba(239,68,68,0.3)">
+          <span class="mode-icon">🔴</span>
+          <div class="mode-info">
+            <span class="mode-label">Modo DIOS</span>
+            <span class="mode-sub">Todos los personajes disponibles</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Pregunta Manual ── -->
+  <div id="quien-manual-overlay" class="quien-mode-overlay" style="display:none; z-index:300;">
+    <div class="quien-mode-box">
+      <button class="lobby-back" onclick="hideManualOverlay()" style="align-self:flex-start">← Cancelar</button>
+      <div class="quien-intro-icon">✍️</div>
+      <h2 class="quien-title">PREGUNTA MANUAL</h2>
+      <p class="quien-desc">Escribe una pregunta para el oponente (solo se puede responder Sí o No).</p>
+      <input type="text" id="manual-q-input" class="lobby-input"
+        style="width: 100%; margin-bottom: 16px; text-transform:none;" placeholder="Ej: ¿Lleva gafas?">
+      <button class="quien-start-btn visible" style="margin: 0 auto;" onclick="submitManualQuestion()">Enviar
+        Pregunta</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="quien-wrap">
+
+      <!-- Columna izquierda -->
+      <div class="quien-left">
+        <div id="quien-status"></div>
+        <div id="quien-god-actions" class="quien-god-actions"></div>
+        <div id="quien-questions"></div>
+      </div>
+
+      <!-- Tablero 3D -->
+      <div class="quien-3d-scene">
+        <!-- Panel de bienvenida (solo en idle) -->
+        <div id="quien-play-wrap" class="quien-play-wrap">
+          <h2 class="quien-play-title">🎭 Quién es Quién</h2>
+          <p class="quien-play-desc">Elige un personaje secreto. Tu rival tendrá que adivinarlo haciendo preguntas de sí
+            o no.<br>¡El primero en adivinar gana!</p>
+          <button class="quien-play-big-btn" onclick="if(typeof showModeOverlay==='function')showModeOverlay()">🎮
+            Jugar</button>
+          <button class="quien-play-help-btn" onclick="showTutorial()">❓ Cómo jugar</button>
+        </div>
+        <div class="quien-board-title">
+          <h2>Elige tu personaje secreto</h2>
+          <p>Haz clic en el personaje que vas a ser. La máquina intentará adivinarlo.</p>
+        </div>
+        <div id="quien-board" class="quien-3d-board"></div>
+      </div>
+
+      <!-- Personaje secreto del jugador -->
+      <div class="quien-right">
+        <p class="quien-my-label">Tu personaje secreto</p>
+        <div id="quien-my-card"></div>
+        <button id="quien-start-btn" class="quien-start-btn" onclick="onStartBtnClick()">¡Comenzar!</button>
+        <div id="quien-secret-tooltip" class="quien-secret-tooltip"></div>
+        <!-- Historial de preguntas -->
+        <div id="quien-history" class="quien-history" style="display:none">
+          <p class="quien-history-title">📋 Historial</p>
+          <div id="quien-history-list" class="quien-history-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Botón de ayuda lateral -->
+  <div class="side-actions">
+    <button class="side-btn" onclick="showTutorial()" aria-label="Cómo jugar">
+      <span class="side-icon">❓</span>Ayuda
+    </button>
+  </div>
+
+
+
+  <footer>
+    <p>LQSACatena · Fan-made con ❤️ · No oficial · <span>La que se avecina</span> es Catena / FDF</p>
+    <p style="margin-top:8px">
+      <span style="color:var(--text2);font-size:0.8rem;letter-spacing:1px">Hecho por Jose Antonio</span>
+    </p>
+  </footer>
+
+  <!-- Confetti SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js?v=13"></script>
+  <script src="characters.js"></script>
+  <script src="albumData.js"></script>
+  <script src="album.js"></script>
+  <script src="trades.js"></script>
+
+  <script src="quien.js"></script>
+  <script src="utils.js"></script>
+  <script src="friends.js"></script>
+  <script src="quien-online.js"></script>
+  <script src="quien-duelo.js"></script>
+  <script>
+    // Sobrescribir showTutorial globalmente para que llame a la función interna de quien.js
+    function showTutorial() {
+      if (typeof showQuienTutorial === 'function') {
+        showQuienTutorial();
+      }
+    }
+  </script>
+  <div id="quien-card-tooltip" class="quien-card-tooltip"></div>
+</body>
+
+</html>

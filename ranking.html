@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LQSACatena – Ranking Global y Logros</title>
+  <meta name="description"
+    content="Mira el ranking de los mejores jugadores del Quién es Quién de La que se avecina y tus logros desbloqueados.">
+  <link rel="icon" type="image/svg+xml" href="img/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Barlow+Condensed:wght@400;600;700&amp;family=Barlow:wght@400;600&amp;display=swap">
+  <meta name="theme-color" content="#f0c020">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Estilos específicos para la página de ranking */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 16px 80px;
+    }
+
+    .ranking-container {
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .ranking-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .ranking-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      color: var(--accent);
+      letter-spacing: 4px;
+      margin: 0 0 6px 0;
+      text-shadow: 0 0 20px rgba(240, 192, 32, 0.3);
+    }
+
+    .ranking-subtitle {
+      font-size: 0.95rem;
+      color: var(--text2);
+      margin: 0;
+    }
+
+    /* Grid de logros de la página */
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .ach-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      transition: all 0.2s;
+    }
+
+    .ach-card.unlocked {
+      border-color: rgba(240, 192, 32, 0.25);
+      background: rgba(240, 192, 32, 0.02);
+    }
+
+    .ach-card.locked {
+      opacity: 0.45;
+    }
+
+    .ach-card-icon {
+      font-size: 2.4rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .unlocked .ach-card-icon {
+      background: rgba(240, 192, 32, 0.12);
+      color: var(--accent);
+      box-shadow: 0 0 10px rgba(240, 192, 32, 0.25);
+    }
+
+    .ach-card-content {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .ach-card-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .unlocked .ach-card-name {
+      color: var(--accent);
+    }
+
+    .ach-card-desc {
+      font-size: 0.84rem;
+      color: var(--text2);
+      line-height: 1.4;
+      margin-top: 3px;
+    }
+
+    .ach-card-quote {
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-style: italic;
+      margin-top: 6px;
+      opacity: 0.85;
+    }
+
+    @media (max-width: 992px) {
+      .ranking-grid-layout {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    .ranking-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    /* Sub-tabs y filtros */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .rtab-sub {
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .rtab-sub:hover {
+      color: var(--text);
+    }
+
+    .rtab-sub.active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    /* Podio top 3 */
+    .podium-section {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 16px 0 0;
+    }
+
+    .podium-entry {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .podium-medal {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .podium-av {
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top;
+      border: 3px solid transparent;
+    }
+
+    .podium-1 .podium-av {
+      width: 72px;
+      height: 72px;
+      border-color: #f0c020;
+      box-shadow: 0 0 16px rgba(240, 192, 32, 0.5);
+    }
+
+    .podium-2 .podium-av {
+      width: 56px;
+      height: 56px;
+      border-color: #c0c0c0;
+      box-shadow: 0 0 10px rgba(192, 192, 192, 0.4);
+    }
+
+    .podium-3 .podium-av {
+      width: 48px;
+      height: 48px;
+      border-color: #cd7f32;
+      box-shadow: 0 0 10px rgba(205, 127, 50, 0.4);
+    }
+
+    .podium-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text);
+      text-align: center;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .podium-wins {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    .podium-title {
+      font-size: 0.65rem;
+      color: var(--text2);
+      text-align: center;
+      max-width: 88px;
+      line-height: 1.2;
+    }
+
+    .podium-plinth {
+      border-radius: 6px 6px 0 0;
+      width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .podium-1 .podium-plinth {
+      height: 60px;
+      background: linear-gradient(180deg, rgba(240, 192, 32, 0.25) 0%, rgba(240, 192, 32, 0.05) 100%);
+      border-top: 2px solid rgba(240, 192, 32, 0.5);
+    }
+
+    .podium-2 .podium-plinth {
+      height: 44px;
+      background: linear-gradient(180deg, rgba(192, 192, 192, 0.2) 0%, rgba(192, 192, 192, 0.04) 100%);
+      border-top: 2px solid rgba(192, 192, 192, 0.4);
+    }
+
+    .podium-3 .podium-plinth {
+      height: 32px;
+      background: linear-gradient(180deg, rgba(205, 127, 50, 0.2) 0%, rgba(205, 127, 50, 0.04) 100%);
+      border-top: 2px solid rgba(205, 127, 50, 0.4);
+    }
+
+    /* Racha badge */
+    .streak-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fb923c;
+      background: rgba(251, 146, 60, 0.12);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+      border-radius: 20px;
+      padding: 1px 7px;
+    }
+
+    .rank-title-badge {
+      font-size: 0.7rem;
+      color: var(--text2);
+      font-family: 'Barlow Condensed', sans-serif;
+      display: block;
+      letter-spacing: 0.5px;
+      margin-top: 1px;
+    }
+
+    /* Paneles Sociales Laterales */
+    .social-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .social-card {
+      background: rgba(30, 30, 45, 0.4);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .social-card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Feed de actividad */
+    .feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .feed-item {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      padding: 8px;
+      align-items: center;
+    }
+
+    .feed-av {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: top;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .feed-body {
+      flex: 1;
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .feed-uname {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .feed-time {
+      font-size: 0.65rem;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    /* Chat Global */
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      height: 300px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+      margin-bottom: 10px;
+    }
+
+    .chat-msg {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      max-width: 90%;
+    }
+
+    .chat-msg.me {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .chat-bubble {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.3;
+      position: relative;
+    }
+
+    .chat-msg.me .chat-bubble {
+      background: rgba(240, 192, 32, 0.12);
+      border-color: rgba(240, 192, 32, 0.25);
+    }
+
+    .chat-sender {
+      font-weight: bold;
+      color: var(--accent);
+      font-size: 0.72rem;
+      margin-bottom: 2px;
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+
+    .chat-input-wrap {
+      display: flex;
+      gap: 6px;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: sans-serif;
+      font-size: 0.82rem;
+      padding: 8px 10px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent);
+    }
+
+    .chat-send-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(240, 192, 32, 0.3);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="index.html" style="text-decoration:none">
+        <div class="logo"><span>LQSA</span>Catena</div>
+      </a>
+      <div class="subtitle">Adivina el personaje de «La que se avecina»</div>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-btn">🏠 Inicio</a>
+      <a href="index.html" class="nav-btn">🎭 Quién es Quién</a>
+      <a href="ranking.html" class="nav-btn active">🏆 Ranking</a>
+    </nav>
+    <span class="auth-nav-item"></span>
+  </header>
+
+  <main>
+    <div class="ranking-container">
+      <div class="ranking-header">
+        <h1 class="ranking-title">🏆 VECINDARIO GLOBAL</h1>
+        <p class="ranking-subtitle">Compite contra la comunidad y consigue todos los logros vecinales</p>
+      </div>
+
+      <div class="ranking-tabs">
+        <button id="tab-leaderboard" class="rtab active" onclick="switchRankingTab('leaderboard')">🏆
+          Clasificaciones</button>
+        <button id="tab-achievements" class="rtab" onclick="switchRankingTab('achievements')">🏅 Mis Logros</button>
+      </div>
+
+      <div class="ranking-grid-layout">
+        <!-- Columna del Ranking / Logros -->
+        <div class="ranking-left-col">
+          <!-- Sección del ranking -->
+          <div id="sec-leaderboard" class="ranking-content">
+            <!-- Barra de Filtros Integrados -->
+            <div class="filter-bar">
+              <div class="filter-group">
+                <button id="f-time-global" class="rtab-sub active"
+                  onclick="setRankingFilter('time', 'global')">Histórico</button>
+                <button id="f-time-weekly" class="rtab-sub"
+                  onclick="setRankingFilter('time', 'weekly')">Semanal</button>
+              </div>
+              <div class="filter-group">
+                <button id="f-mode-all" class="rtab-sub active" onclick="setRankingFilter('mode', 'all')">Todo</button>
+                <button id="f-mode-machine" class="rtab-sub" onclick="setRankingFilter('mode', 'machine')">vs
+                  IA</button>
+                <button id="f-mode-online" class="rtab-sub" onclick="setRankingFilter('mode', 'online')">Duelos</button>
+              </div>
+            </div>
+
+            <div id="podium-section" class="podium-section" style="display:none"></div>
+            <div class="ranking-table-wrap">
+              <table class="ranking-table">
+                <thead>
+                  <tr>
+                    <th>Puesto</th>
+                    <th>Vecino</th>
+                    <th id="th-wins">Victorias</th>
+                    <th id="th-played">Jugadas</th>
+                    <th>Ratio</th>
+                    <th>🔥 Racha</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                  <tr>
+                    <td colspan="6" class="ranking-loading">Cargando la clasificación de Montepinar...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p id="ranking-auth-hint" class="ranking-login-hint" style="display:none">
+              ¿Quieres aparecer aquí? <a href="#" onclick="openLoginModal(); return false;">Inicia sesión</a> y
+              demuestra quién manda.
+            </p>
+          </div>
+
+          <!-- Sección de logros -->
+          <div id="sec-achievements" class="ranking-content" style="display:none">
+            <div id="achievements-list-container">
+              <p class="ranking-loading">Cargando tus logros...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Social (Chats y Feed) -->
+        <div class="ranking-right-col social-sidebar">
+          <!-- Chat Global -->
+          <div class="social-card">
+            <div class="social-card-title">💬 Chat de la Comunidad</div>
+            <div class="chat-box">
+              <div id="chat-messages" class="chat-messages">
+                <p style="color:var(--text2);font-size:0.8rem;text-align:center;margin-top:40px;">Cargando mensajes del
+                  portal...</p>
+              </div>
+              <div class="chat-input-wrap">
+                <input id="chat-input" type="text" class="chat-input" placeholder="Escribe un mensaje de vecino..."
+                  onkeydown="if(event.key==='Enter')sendChatMessage()" disabled>
+                <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()" disabled>Enviar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feed de Actividad -->
+          <div class="social-card">
+            <div class="social-card-title">📢 Canal Vecinal</div>
+            <div id="feed-list" class="feed-list">
+              <p style="color:var(--text2);font-size:0.8rem;text-align:center;margin-top:20px;">Escuchando
+                actividades...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>LQSACatena · Fan-made con ❤️ · No oficial · <span>La que se avecina</span> es Catena / FDF</p>
+    <p style="margin-top:8px">
+      <span style="color:var(--text2);font-size:0.8rem;letter-spacing:1px">Hecho por Jose Antonio </span>
+    </p>
+  </footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js?v=13"></script>
+  <script src="characters.js"></script>
+  <script src="utils.js"></script>
+  <script src="friends.js"></script>
+  <script>
+    let activeTab = 'leaderboard';
+    let filterTime = 'global'; // 'global' | 'weekly'
+    let filterMode = 'all';    // 'all' | 'machine' | 'online'
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadLeaderboard();
+      initCommunityChat();
+      initActivityFeed();
+
+      if (activeTab === 'achievements') {
+        loadAchievements();
+      }
+
+      // Habilitar recarga en tiempo real cuando cambia el perfil en auth.js
+      window.onUserProfileLoaded = () => {
+        loadLeaderboard();
+        updateChatState();
+        if (activeTab === 'achievements') {
+          loadAchievements();
+        }
+      };
+    });
+
+    function switchRankingTab(tabName) {
+      activeTab = tabName;
+      document.getElementById('tab-leaderboard').classList.toggle('active', tabName === 'leaderboard');
+      document.getElementById('tab-achievements').classList.toggle('active', tabName === 'achievements');
+
+      document.getElementById('sec-leaderboard').style.display = tabName === 'leaderboard' ? 'block' : 'none';
+      document.getElementById('sec-achievements').style.display = tabName === 'achievements' ? 'block' : 'none';
+
+      if (tabName === 'leaderboard') {
+        loadLeaderboard();
+      } else {
+        loadAchievements();
+      }
+    }
+
+    function setRankingFilter(type, value) {
+      if (type === 'time') {
+        filterTime = value;
+        document.getElementById('f-time-global').classList.toggle('active', value === 'global');
+        document.getElementById('f-time-weekly').classList.toggle('active', value === 'weekly');
+      } else if (type === 'mode') {
+        filterMode = value;
+        document.getElementById('f-mode-all').classList.toggle('active', value === 'all');
+        document.getElementById('f-mode-machine').classList.toggle('active', value === 'machine');
+        document.getElementById('f-mode-online').classList.toggle('active', value === 'online');
+      }
+      loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+      const tbody = document.getElementById('leaderboard-body');
+      const hint = document.getElementById('ranking-auth-hint');
+      const podiumEl = document.getElementById('podium-section');
+
+      // Actualizar cabeceras según el modo
+      const thWins = document.getElementById('th-wins');
+      const thPlayed = document.getElementById('th-played');
+      if (filterMode === 'machine') {
+        if (thWins) thWins.textContent = 'Vic. vs IA';
+        if (thPlayed) thPlayed.textContent = 'Jug. vs IA';
+      } else if (filterMode === 'online') {
+        if (thWins) thWins.textContent = 'Duelos Ganados';
+        if (thPlayed) thPlayed.textContent = 'Duelos Jugados';
+      } else {
+        if (thWins) thWins.textContent = 'Victorias';
+        if (thPlayed) thPlayed.textContent = 'Jugadas';
+      }
+
+      const currentUser = currentUserProfile;
+      hint.style.display = currentUser ? 'none' : 'block';
+
+      try {
+        const db = firebase.database();
+        let refPath = 'leaderboard';
+        if (filterTime === 'weekly') {
+          const weeklyKey = (typeof window.getWeeklyKey === 'function') ? window.getWeeklyKey() : 'weekly_current';
+          refPath = `weekly_leaderboards/${weeklyKey}`;
+        }
+
+        const snap = await db.ref(refPath).once('value');
+
+        let players = [];
+        snap.forEach(child => { players.push({ uid: child.key, ...child.val() }); });
+
+        // Procesar campos dinámicamente según el modo seleccionado
+        players = players.map(p => {
+          let wins = p.wins || 0;
+          let played = p.played || 0;
+          if (filterMode === 'machine') {
+            wins = p.wins_machine || 0;
+            played = p.played_machine || 0;
+          } else if (filterMode === 'online') {
+            wins = p.wins_online || 0;
+            played = p.played_online || 0;
+          }
+          return { ...p, displayWins: wins, displayPlayed: played };
+        });
+
+        // Filtrar aquellos que al menos tengan 1 jugada en la subcategoría seleccionada
+        if (filterMode !== 'all') {
+          players = players.filter(p => p.displayPlayed > 0);
+        }
+
+        // Ordenar desc por las victorias visualizadas
+        players.sort((a, b) => b.displayWins - a.displayWins);
+
+        if (players.length === 0) {
+          podiumEl.style.display = 'none';
+          tbody.innerHTML = `<tr><td colspan="6" class="ranking-empty">Aún no hay clasificados en esta categoría. ¡Demuestra tu valía!</td></tr>`;
+          return;
+        }
+
+        // ── Podio top 3 ──
+        const medals = ['🥇', '🥈', '🥉'];
+        const podiumClass = ['podium-2', 'podium-1', 'podium-3'];
+        const podiumOrder = [];
+
+        if (players[1]) podiumOrder.push(1); // 2º puesto (izquierda)
+        if (players[0]) podiumOrder.push(0); // 1º puesto (centro)
+        if (players[2]) podiumOrder.push(2); // 3º puesto (derecha)
+
+        if (players.length >= 2) {
+          podiumEl.style.display = 'flex';
+          podiumEl.innerHTML = podiumOrder.map(i => {
+            const p = players[i];
+            const av = p.avatar || 'img/personajes/amador-rivas.webp';
+            const plinthLabel = i + 1;
+            return `
+              <div class="podium-entry ${podiumClass[podiumOrder.indexOf(i)]}">
+                <div class="podium-medal">${medals[i]}</div>
+                <img class="podium-av" src="${av}" alt="${p.username}" onerror="this.src='img/personajes/amador-rivas.webp'">
+                <div class="podium-name">${p.username}</div>
+                ${p.title ? `<div class="podium-title">${p.title}</div>` : ''}
+                <div class="podium-wins">${p.displayWins} vic.</div>
+                <div class="podium-plinth">${plinthLabel}</div>
+              </div>`;
+          }).join('');
+        } else {
+          podiumEl.style.display = 'none';
+        }
+
+        // ── Tabla completa ──
+        tbody.innerHTML = players.map((player, index) => {
+          const rank = index + 1;
+          const isMe = currentUser && currentUser.uid === player.uid;
+          const wins = player.displayWins;
+          const played = player.displayPlayed;
+          const rate = played > 0 ? Math.round((wins / played) * 100) : 0;
+          const avatar = player.avatar || 'img/personajes/amador-rivas.webp';
+          const streak = player.maxStreak || 0;
+          const title = player.title || '';
+          const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+          return `
+            <tr class="${isMe ? 'rank-row-me' : ''}">
+              <td class="rank-pos">${rankIcon}</td>
+              <td class="rank-player">
+                <div class="rank-av">
+                  <img class="rank-av-img" src="${avatar}" alt="Avatar" onerror="this.src='img/personajes/amador-rivas.webp'">
+                </div>
+                <div>
+                  <span class="rank-uname">${player.username}</span>
+                  ${title ? `<span class="rank-title-badge">${title}</span>` : ''}
+                </div>
+              </td>
+              <td class="rank-won">${wins}</td>
+              <td>${played}</td>
+              <td>${rate}%</td>
+              <td>${streak > 0 ? `<span class="streak-badge">🔥 ${streak}</span>` : '<span style="color:var(--text2)">—</span>'}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error cargando el ranking:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="ranking-empty">Error al cargar la clasificación. Inténtalo más tarde.</td></tr>`;
+      }
+    }
+
+    function loadAchievements() {
+      const container = document.getElementById('achievements-list-container');
+      const currentUser = currentUserProfile;
+
+      if (!currentUser) {
+        container.innerHTML = `
+          <div class="ranking-empty" style="padding: 30px 10px;">
+            <p>Debes iniciar sesión para desbloquear y ver tus logros vecinales.</p>
+            <button class="auth-login-btn" onclick="openLoginModal()" style="margin: 14px auto 0 auto; display: block;">🚪 Entrar</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (!currentUserProfile) {
+        container.innerHTML = `<p class="ranking-loading">Cargando tus logros...</p>`;
+        return;
+      }
+
+      const unlockedSet = new Set(currentUserProfile.achievements || []);
+
+      const gridHtml = ACHIEVEMENTS.map(ach => {
+        const isUnlocked = unlockedSet.has(ach.id);
+        return `
+          <div class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+            <div class="ach-card-icon">${isUnlocked ? ach.icon : '🔒'}</div>
+            <div class="ach-card-content">
+              <div class="ach-card-name">${ach.name}</div>
+              <div class="ach-card-desc">${ach.desc}</div>
+              ${isUnlocked ? `<div class="ach-card-quote">"${ach.quote}"</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="achievements-grid">
+          ${gridHtml}
+        </div>
+      `;
+    }
+
+    // ── Chat de la Comunidad en tiempo real ────────────────
+    let _chatRef = null;
+
+    function initCommunityChat() {
+      const db = firebase.database();
+      _chatRef = db.ref('global_chat').limitToLast(50);
+
+      _chatRef.on('value', (snap) => {
+        const chatEl = document.getElementById('chat-messages');
+        if (!chatEl) return;
+
+        if (!snap.exists()) {
+          chatEl.innerHTML = `<p style="color:var(--text2);font-size:0.8rem;text-align:center;margin-top:40px;">No hay mensajes en la junta vecinal. ¡Escribe algo!</p>`;
+          return;
+        }
+
+        let html = '';
+        snap.forEach(child => {
+          const msg = child.val();
+          const isMe = currentUserProfile && currentUserProfile.username === msg.username;
+          html += `
+            <div class="chat-msg ${isMe ? 'me' : ''}">
+              <div class="chat-bubble">
+                <div class="chat-sender">${msg.username}</div>
+                <div>${msg.text}</div>
+              </div>
+            </div>
+          `;
+        });
+        chatEl.innerHTML = html;
+        chatEl.scrollTop = chatEl.scrollHeight;
+      });
+
+      updateChatState();
+    }
+
+    function updateChatState() {
+      const chatInput = document.getElementById('chat-input');
+      const chatSendBtn = document.getElementById('chat-send-btn');
+
+      if (!chatInput || !chatSendBtn) return;
+
+      if (currentUserProfile) {
+        chatInput.disabled = false;
+        chatInput.placeholder = "Di algo al vecindario...";
+        chatSendBtn.disabled = false;
+      } else {
+        chatInput.disabled = true;
+        chatInput.placeholder = "Inicia sesión para chatear...";
+        chatSendBtn.disabled = true;
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text || !currentUserProfile) return;
+
+      input.value = '';
+      try {
+        const db = firebase.database();
+        const chatRef = db.ref('global_chat');
+        const newMsg = chatRef.push();
+        await newMsg.set({
+          username: currentUserProfile.username,
+          text: text,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        // Limpiar antiguos para optimizar RTDB
+        chatRef.once('value', async (snap) => {
+          if (snap.exists() && snap.numChildren() > 50) {
+            let items = [];
+            snap.forEach(c => { items.push({ key: c.key, ...c.val() }); });
+            items.sort((a, b) => a.timestamp - b.timestamp);
+            const toDelete = items.length - 50;
+            for (let i = 0; i < toDelete; i++) {
+              await chatRef.child(items[i].key).remove();
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Error al enviar mensaje:", err);
+      }
+    }
+
+    // ── Feed de Actividad en tiempo real ────────────────
+    function initActivityFeed() {
+      const db = firebase.database();
+      db.ref('activity_feed').limitToLast(25).on('value', (snap) => {
+        const feedEl = document.getElementById('feed-list');
+        if (!feedEl) return;
+
+        if (!snap.exists()) {
+          feedEl.innerHTML = `<p style="color:var(--text2);font-size:0.8rem;text-align:center;margin-top:20px;">Aún no hay acciones vecinales registradas.</p>`;
+          return;
+        }
+
+        let items = [];
+        snap.forEach(child => { items.push(child.val()); });
+        items.reverse(); // Actividad más reciente arriba
+
+        feedEl.innerHTML = items.map(item => {
+          // Reemplazar markdown simple de negrita **texto** a html <strong>
+          const textHtml = item.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+          const timeStr = item.timestamp ? formatFeedTime(item.timestamp) : '';
+
+          return `
+            <div class="feed-item">
+              <img class="feed-av" src="${item.avatar}" alt="Avatar" onerror="this.src='img/personajes/amador-rivas.webp'">
+              <div class="feed-body">
+                <div><span class="feed-uname">${item.username}:</span> ${textHtml}</div>
+                <div class="feed-time">${timeStr}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    function formatFeedTime(ts) {
+      const diff = Date.now() - ts;
+      const secs = Math.floor(diff / 1000);
+      if (secs < 60) return 'Hace un momento';
+      const mins = Math.floor(secs / 60);
+      if (mins < 60) return `Hace ${mins} min`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `Hace ${hours} h`;
+      const date = new Date(ts);
+      return date.toLocaleDateString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+  </script>
+</body>
+
+</html>
