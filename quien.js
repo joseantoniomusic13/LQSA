@@ -114,6 +114,12 @@ window.addEventListener('load', function () {
 
 // ── Init: muestra selector de modo ───────────────────
 function initGame() {
+  const savedUser = localStorage.getItem("lqsa_user");
+  if (savedUser === "admin") {
+    window.location.replace("index.html");
+    return;
+  }
+
   if (typeof cleanupOnlineRoom === 'function') cleanupOnlineRoom();
   gameMode = 'machine';
   onlineAnswers = {};
@@ -521,19 +527,46 @@ function onMachineGuessResult(nombre, correct) {
         <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Revancha</button>
       </div>`);
   } else {
-    // La máquina falla → elimina ese candidato y pasa el turno al jugador
-    machineCands = machineCands.filter(c => c.nombre !== nombre);
-    busy = false;
-    phase = 'player_turn';
-    renderQuestions(true);
+    // La máquina falla → ¡El jugador gana la partida inmediatamente!
+    phase = 'gameover';
+    renderQuestions(false);
+    renderGodActions();
+
+    // Guardar estadísticas y otorgar 50 monedas
+    if (typeof StatsFirebase !== 'undefined' && !statsSavedForCurrentGame) {
+      statsSavedForCurrentGame = true;
+      StatsFirebase.saveGameResult('quien_machine', askedByPlayer.size, true, machineSecret ? machineSecret.nombre : null);
+    }
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+    }
+
+    const mySlug = makeSlug(mySecret.nombre);
+    const machSlug = makeSlug(machineSecret.nombre);
     setStatus(`
-      <div class="quien-turn-player">
-        <p class="turn-badge" style="color:#f87171">🤖 Fallo de la máquina</p>
-        <p class="quien-desc">No era <strong>${nombre}</strong>. Ahora es tu turno.</p>
+      <div class="quien-result">
+        <p class="quien-result-label">¡Has ganado! 🎉</p>
+        <div style="font-size: 0.85rem; color: var(--text2); margin: 6px 0 12px; line-height: 1.4;">
+          🤖 La máquina ha fallado su suposición al preguntar por <strong>${nombre}</strong> y ha perdido la partida.
+        </div>
+        <p style="font-size:0.8rem;color:var(--text2);margin:4px 0 6px">Tu personaje era:</p>
+        <div class="quien-guess-avatar win-avatar" style="margin:0 auto 6px">
+          <img src="img/personajes/${mySlug}.webp" alt="${mySecret.nombre}"
+            onerror="if(this.src.endsWith('.webp')){this.src=this.src.replace('.webp','.jpg')}else if(this.src.endsWith('.jpg')){this.src=this.src.replace('.jpg','.jpeg')}else{this.style.display='none'}">
+        </div>
+        <h2 class="quien-guess-name">${mySecret.nombre}</h2>
+        <div style="margin:14px 0 6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:12px">
+          <p style="font-size:0.8rem;color:var(--text2);margin:0 0 6px">El personaje de la máquina era:</p>
+          <div class="quien-guess-avatar" style="border-color:var(--accent);margin:0 auto 6px">
+            <img src="img/personajes/${machSlug}.webp" alt="${machineSecret.nombre}"
+              onerror="if(this.src.endsWith('.webp')){this.src=this.src.replace('.webp','.jpg')}else if(this.src.endsWith('.jpg')){this.src=this.src.replace('.jpg','.jpeg')}else{this.style.display='none'}">
+          </div>
+          <h2 class="quien-guess-name" style="font-size:1.1rem">${machineSecret.nombre}</h2>
+        </div>
+        <p class="quien-desc">La partida duró <strong>${turnCount}</strong> ronda${turnCount !== 1 ? 's' : ''}.</p>
+        <button class="guess-btn" onclick="initGame()" style="margin-top:14px">Jugar de nuevo</button>
       </div>`);
-    setTimeout(() => {
-      if (phase === 'player_turn') setStatus(playerTurnStatus());
-    }, 1800);
   }
 }
 
@@ -669,7 +702,7 @@ function toggleCardFlipManual(nombre, event) {
     if (statusEl && (statusEl.innerHTML.includes('quien-remaining') || statusEl.innerHTML.includes('Tu turno'))) {
       statusEl.innerHTML = playerTurnStatus();
     }
-    
+
     if (gameMode === 'online') {
       if (typeof saveOnlineGameState === 'function') saveOnlineGameState();
     }
@@ -797,6 +830,10 @@ function renderQuestions(enabled) {
   if (!el) return;
 
   if (gameMode === 'detective') {
+    if (!enabled) {
+      el.innerHTML = '';
+      return;
+    }
     el.innerHTML = `
       <div style="margin-top: 15px; padding: 0 4px;">
         <button class="guess-btn" style="width: 100%; font-weight: bold; background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: transform 0.15s; box-shadow: 0 4px 15px rgba(240,192,32,0.4);" 
@@ -1075,21 +1112,7 @@ function toggleManualDiscardMode() {
 function renderGodActions() {
   const el = document.getElementById('quien-god-actions');
   if (!el) return;
-
-  if (gameMode === 'online' || window._duelRoomCode || gameDifficulty !== 'dios' || phase === 'idle' || phase === 'gameover') {
-    el.innerHTML = '';
-    return;
-  }
-
-  const btnCls = manualDiscardMode ? 'q-btn active-manual' : 'q-btn';
-  const btnText = manualDiscardMode ? '🔴 Modo: BAJAR FICHAS (Manual)' : '🟢 Modo: ADIVINAR (Resolver)';
-  const style = manualDiscardMode
-    ? 'background: rgba(239,68,68,0.25); border-color: #ef4444; color: #fca5a5; width:100%; text-align:center; padding: 10px; font-weight: bold; margin-bottom: 12px;'
-    : 'background: rgba(16,185,129,0.15); border-color: #10b981; color: #a7f3d0; width:100%; text-align:center; padding: 10px; font-weight: bold; margin-bottom: 12px;';
-
-  el.innerHTML = `
-    <button class="${btnCls}" style="${style}" onclick="toggleManualDiscardMode()">${btnText}</button>
-  `;
+  el.innerHTML = '';
 }
 
 // ═══════════════════════════════════════════════════
@@ -1175,11 +1198,18 @@ function detectiveGuess(nombre) {
   busy = true;
   phase = 'gameover';
 
+  // Ocultar el panel de preguntas (quita el botón RESOLVER PERSONAJE)
+  renderQuestions(false);
+
   const correct = nombre === machineSecret.nombre;
 
-  if (typeof StatsFirebase !== 'undefined' && !statsSavedForCurrentGame) {
-    statsSavedForCurrentGame = true;
-    StatsFirebase.saveGameResult('quien_machine', 0, correct, machineSecret ? machineSecret.nombre : null);
+  try {
+    if (typeof StatsFirebase !== 'undefined' && !statsSavedForCurrentGame) {
+      statsSavedForCurrentGame = true;
+      StatsFirebase.saveGameResult('quien_machine', 0, correct, machineSecret ? machineSecret.nombre : null);
+    }
+  } catch (e) {
+    console.warn('[detectiveGuess] Error guardando estadísticas:', e);
   }
 
   const slug = makeSlug(machineSecret.nombre);

@@ -500,6 +500,8 @@
       <a href="index.html" class="nav-btn">🏠 Inicio</a>
       <a href="index.html" class="nav-btn">🎭 Quién es Quién</a>
       <a href="ranking.html" class="nav-btn active">🏆 Ranking</a>
+      <a href="#" class="nav-btn" onclick="openAlbumUI(); return false;">📘 Álbum</a>
+      <a href="#" class="nav-btn" onclick="openMissionsUI(false); return false;">📅 Misiones</a>
     </nav>
     <span class="auth-nav-item"></span>
   </header>
@@ -722,9 +724,15 @@
           return { ...p, displayWins: wins, displayPlayed: played };
         });
 
+        // Filtrar jugadores sin nombre de usuario registrado o que sean el administrador ('admin')
+        players = players.filter(p => p.username && p.username.trim() !== '' && p.username.toLowerCase() !== 'admin' && p.uid !== 'admin');
+
         // Filtrar aquellos que al menos tengan 1 jugada en la subcategoría seleccionada
         if (filterMode !== 'all') {
           players = players.filter(p => p.displayPlayed > 0);
+        } else {
+          // En modo "todos", excluir también los que no tienen ninguna partida
+          players = players.filter(p => (p.played || 0) > 0);
         }
 
         // Ordenar desc por las victorias visualizadas

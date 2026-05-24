@@ -155,36 +155,60 @@ document.addEventListener("DOMContentLoaded", () => {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
 
+    const db = firebase.database();
+
+    // 📢 Escuchar anuncios globales en tiempo real
+    db.ref("system_announcement").on("value", (snap) => {
+      const text = snap.val() || "";
+      if (typeof updateGlobalAnnouncementBanner === "function") {
+        updateGlobalAnnouncementBanner(text);
+      }
+    });
+
+    // 🛠️ Escuchar estado de mantenimiento global en tiempo real
+    db.ref("system_maintenance").on("value", (snap) => {
+      const active = !!snap.val();
+      if (typeof handleMaintenanceScreen === "function") {
+        handleMaintenanceScreen(active);
+      }
+    });
+
     const savedUser = localStorage.getItem("lqsa_user");
     if (savedUser) {
-      const db = firebase.database();
       db.ref("users/" + savedUser).on("value", (snap) => {
         if (snap.exists()) {
           currentUserProfile = snap.val();
           currentUserProfile.uid = savedUser; // Compatibilidad con vistas
 
-          // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
-          if (typeof initAlbumSystem === 'function') initAlbumSystem(savedUser);
+          if (savedUser === "admin") {
+            // Si el usuario es el administrador, anular la pantalla de juego con el panel de administración
+            if (typeof renderAdminDashboardPage === "function") {
+              setTimeout(renderAdminDashboardPage, 100);
+            }
+          } else {
+            // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
+            if (typeof initAlbumSystem === 'function') initAlbumSystem(savedUser);
 
-          updateAuthNav();
+            updateAuthNav();
 
-          // Iniciar sistema de presencia y amigos
-          if (typeof initPresence === 'function') initPresence(savedUser);
-          if (typeof initFriendsSystem === 'function') initFriendsSystem(savedUser);
+            // Iniciar sistema de presencia y amigos
+            if (typeof initPresence === 'function') initPresence(savedUser);
+            if (typeof initFriendsSystem === 'function') initFriendsSystem(savedUser);
 
-          // Reconectar automáticamente si tiene partida de duelo guardada
-          if (typeof checkDuelingRoomReconnection === 'function') {
-            checkDuelingRoomReconnection();
-          }
+            // Reconectar automáticamente si tiene partida de duelo guardada
+            if (typeof checkDuelingRoomReconnection === 'function') {
+              checkDuelingRoomReconnection();
+            }
 
-          // Verificar reconexión de partida online activa
-          if (typeof checkOnlineRoomReconnection === 'function') {
-            checkOnlineRoomReconnection();
-          }
+            // Verificar reconexión de partida online activa
+            if (typeof checkOnlineRoomReconnection === 'function') {
+              checkOnlineRoomReconnection();
+            }
 
-          // Disparar callback de recarga en ranking si existe
-          if (typeof window.onUserProfileLoaded === "function") {
-            window.onUserProfileLoaded();
+            // Disparar callback de recarga en ranking si existe
+            if (typeof window.onUserProfileLoaded === "function") {
+              window.onUserProfileLoaded();
+            }
           }
         } else {
           localStorage.removeItem("lqsa_user");
@@ -447,17 +471,24 @@ async function handleAuthSubmit() {
           currentUserProfile = newSnap.val();
           currentUserProfile.uid = userKey;
 
-          // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
-          if (typeof initAlbumSystem === 'function') initAlbumSystem(userKey);
+          if (userKey === "admin") {
+            // Si el usuario es el administrador, anular la pantalla de juego con el panel de administración de inmediato
+            if (typeof renderAdminDashboardPage === "function") {
+              setTimeout(renderAdminDashboardPage, 100);
+            }
+          } else {
+            // 👇 INYECTAR AQUÍ EL MOTOR PREMIUM DEL ÁLBUM
+            if (typeof initAlbumSystem === 'function') initAlbumSystem(userKey);
 
-          updateAuthNav();
+            updateAuthNav();
 
-          // Iniciar presencia y amigos tras login
-          if (typeof initPresence === 'function') initPresence(userKey);
-          if (typeof initFriendsSystem === 'function') initFriendsSystem(userKey);
+            // Iniciar presencia y amigos tras login
+            if (typeof initPresence === 'function') initPresence(userKey);
+            if (typeof initFriendsSystem === 'function') initFriendsSystem(userKey);
 
-          if (typeof window.onUserProfileLoaded === "function") {
-            window.onUserProfileLoaded();
+            if (typeof window.onUserProfileLoaded === "function") {
+              window.onUserProfileLoaded();
+            }
           }
         }
       });
@@ -688,6 +719,8 @@ async function handleSignOut() {
   if (typeof window.onUserProfileLoaded === "function") {
     window.onUserProfileLoaded();
   }
+  // Recargar para limpiar el dashboard de administrador e iniciar limpio
+  window.location.reload();
 }
 
 function closeAllModals() {
@@ -849,26 +882,24 @@ window.StatsFirebase = {
           profile.wins_online = (profile.wins_online || 0) + 1;
         }
 
-        // central economy coin rewards
-        let coinReward = 10; // vs IA básico por defecto
-        if (mode === 'quien_machine' && typeof gameDifficulty !== 'undefined' && gameDifficulty === 'dios') coinReward = 25;
-        if (mode === 'quien_online') coinReward = 30;
-
-        // Bonificaciones Premium Especiales
-        if (attempts < 3) coinReward += 15; // Relámpago
-        if (attempts === 0) coinReward += 40; // Sin Red
+        // central economy coin rewards: flat 50 coins for any win!
+        let coinReward = 50;
 
         // Impactar balance de monedas de forma segura por incremento
         await userRef.child('coins').transaction(c => (c || 0) + coinReward);
 
-        // Progresar misiones diarias de forma automática
+        // Misión de victoria contra la máquina (solo al ganar)
         if (typeof progressMission === 'function') {
-          await progressMission(savedUser, "play_game", 1);
           if (mode === "quien_machine") await progressMission(savedUser, "win_machine", 1);
-          if (attempts >= 5) await progressMission(savedUser, "ask_questions", attempts);
         }
       } else {
         profile.currentStreak = 0;
+      }
+
+      // Progresar misiones diarias que aplican a cualquier partida (ganar o perder)
+      if (typeof progressMission === 'function') {
+        await progressMission(savedUser, "play_game", 1);
+        if (attempts >= 5) await progressMission(savedUser, "ask_questions", attempts);
       }
       profile.maxStreak = Math.max(profile.maxStreak || 0, profile.currentStreak || 0);
 
@@ -1672,5 +1703,379 @@ async function adminDeleteAllCards(userKey, username) {
     adminRenderManageCardsGrid(userKey, username, query);
   } catch (error) {
     alert("Error al eliminar los cromos: " + error.message);
+  }
+}
+
+// ── CONSOLA DE ADMINISTRADOR PREMIUM Y SISTEMA DE MANTENIMIENTO ──
+
+async function renderAdminDashboardPage() {
+  // Evitar duplicar el renderizado si ya está cargado
+  if (document.getElementById("admin-dashboard")) return;
+
+  // Añadir la clase al body para ocultar los demás apartados
+  document.body.classList.add("admin-mode-active");
+
+  // Inyectar el estilo dinámicamente si no existe
+  if (!document.getElementById("admin-hide-other-sections-style")) {
+    const style = document.createElement("style");
+    style.id = "admin-hide-other-sections-style";
+    style.textContent = `
+      body.admin-mode-active > *:not(#admin-dashboard):not(script):not(#global-maintenance-overlay):not(#admin-announcement-bar) {
+        display: none !important;
+      }
+      body.admin-mode-active {
+        background: #0d0d13 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 100vh !important;
+      }
+      .admin-dash-wrap {
+        margin: 0 auto !important;
+        padding: 24px !important;
+        border-radius: 0 !important;
+        border: none !important;
+        background: radial-gradient(circle at center, #0f172a, #020617) !important;
+        min-height: 100vh !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Crear el contenedor directamente en el body
+  const dashWrap = document.createElement("div");
+  dashWrap.id = "admin-dashboard";
+  dashWrap.className = "admin-dash-wrap";
+  document.body.appendChild(dashWrap);
+
+  dashWrap.innerHTML = `
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">⚙️ CONSOLA DE ADMINISTRACIÓN</h1>
+          <p style="color:var(--text2); margin:4px 0 0 0; font-family:'Barlow Condensed',sans-serif; letter-spacing:0.5px; font-weight:bold;">Panel exclusivo de control para el administrador vecinal.</p>
+        </div>
+        <button onclick="handleSignOut()" class="auth-btn" style="background:#dc2626; color:#fff; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">Cerrar sesión</button>
+      </div>
+
+      <!-- Tarjetas de Estadísticas en Tiempo Real -->
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <span class="admin-stat-lbl">👥 Vecinos Registrados</span>
+          <h3 class="admin-stat-val" id="admin-stat-users">...</h3>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-lbl">🪙 Monedas en Circulación</span>
+          <h3 class="admin-stat-val" id="admin-stat-coins">...</h3>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-lbl">🛠️ Mantenimiento Global</span>
+          <h3 class="admin-stat-val" id="admin-stat-maintenance" style="color:#ffd700">...</h3>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-lbl">🏆 Vecino Líder</span>
+          <h3 class="admin-stat-val" id="admin-stat-leader" style="font-size:1.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">...</h3>
+        </div>
+      </div>
+
+      <div class="admin-grid-layout">
+        <!-- Columna Izquierda: Tabla de Vecinos -->
+        <div class="admin-box">
+          <h3 style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--accent); margin:0 0 15px 0;">📋 Listado de Vecinos</h3>
+          <div style="margin-bottom: 15px; display:flex; gap:10px;">
+            <input type="text" id="admin-dashboard-search" class="auth-inp" placeholder="🔍 Buscar vecino por nombre..." oninput="filterAdminDashboardUsers()" style="margin: 0; flex:1;">
+          </div>
+          <div class="admin-users-table-container">
+            <table class="ranking-table" style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                  <th style="padding:10px 5px; text-align:left;">Vecino</th>
+                  <th style="padding:10px 5px; text-align:center;">Monedas</th>
+                  <th style="padding:10px 5px; text-align:center;">Acciones rápidas</th>
+                </tr>
+              </thead>
+              <tbody id="admin-dashboard-users-tbody">
+                <tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text2);">Cargando vecinos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Controles Globales -->
+        <div class="admin-box" style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Panel Mantenimiento y Anuncios -->
+          <div>
+            <h3 style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--accent); margin:0 0 12px 0;">📢 Control del Servidor</h3>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <button id="admin-maintenance-toggle-btn" onclick="toggleGlobalMaintenance()" class="q-btn" style="width:100%; padding:12px; font-weight:bold; text-transform:uppercase; font-family:'Barlow Condensed',sans-serif; border-radius:10px; cursor:pointer;">Cargando...</button>
+              
+              <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <label style="font-family:'Barlow Condensed',sans-serif; font-size:0.85rem; color:var(--text2); text-transform:uppercase;">📢 Mensaje de Anuncio Global</label>
+                <input type="text" id="admin-announcement-input" class="auth-inp" placeholder="Escribe el aviso comunitario..." style="margin:0;">
+                <div style="display:flex; gap:10px; margin-top:4px;">
+                  <button onclick="publishGlobalAnnouncement()" class="q-btn" style="flex:1; background:var(--accent); color:#000; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:8px; border:none; cursor:pointer; border-radius:6px;">Publicar</button>
+                  <button onclick="clearGlobalAnnouncement()" class="q-btn" style="flex:1; background:rgba(255,255,255,0.08); color:#fff; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:8px; border:none; cursor:pointer; border-radius:6px;">Quitar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones de Economía -->
+          <div>
+            <h3 style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#ef4444; margin:0 0 12px 0;">💸 Lluvia de Monedas</h3>
+            <p style="font-size:0.8rem; color:var(--text2); margin:-6px 0 10px 0;">Regala monedas a TODOS los vecinos registrados al mismo tiempo.</p>
+            <div style="display:flex; gap:10px;">
+              <button onclick="adminRainCoins(100)" class="q-btn" style="flex:1; background:rgba(240,192,32,0.15); border:1px solid var(--accent); color:var(--accent); font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border-radius:6px; cursor:pointer;">🪙 Regalar 100</button>
+              <button onclick="adminRainCoins(500)" class="q-btn" style="flex:1; background:rgba(240,192,32,0.25); border:2px solid var(--accent); color:#fff; font-weight:bold; font-family:'Barlow Condensed',sans-serif; padding:10px; border-radius:6px; cursor:pointer;">🪙 Regalar 500</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Deshabilitar botones de juego e interacción
+  const modeOverlay = document.getElementById("quien-mode-overlay");
+  if (modeOverlay) modeOverlay.style.display = "none";
+
+  loadAdminDashboardData();
+}
+
+let cachedAdminDashboardUsers = {};
+
+async function loadAdminDashboardData() {
+  const db = firebase.database();
+  
+  // Escuchar vecinos en tiempo real
+  db.ref("users").on("value", (snap) => {
+    if (!snap.exists()) return;
+    const users = snap.val();
+    cachedAdminDashboardUsers = users;
+    
+    // Renderizar tabla
+    renderAdminDashboardUsersList(users);
+
+    // Calcular estadísticas
+    let totalUsers = 0;
+    let totalCoins = 0;
+    let maxWins = -1;
+    let leaderName = "Ninguno";
+
+    for (let key in users) {
+      if (key === "admin" || users[key].username === "admin") continue;
+      totalUsers++;
+      totalCoins += (users[key].coins || 0);
+      const wins = users[key].wins || 0;
+      if (wins > maxWins && users[key].username) {
+        maxWins = wins;
+        leaderName = users[key].username;
+      }
+    }
+
+    const uEl = document.getElementById("admin-stat-users");
+    const cEl = document.getElementById("admin-stat-coins");
+    const lEl = document.getElementById("admin-stat-leader");
+
+    if (uEl) uEl.textContent = totalUsers;
+    if (cEl) cEl.textContent = totalCoins + " 🪙";
+    if (lEl) lEl.textContent = leaderName;
+  });
+
+  // Escuchar estado de mantenimiento
+  db.ref("system_maintenance").on("value", (snap) => {
+    const active = !!snap.val();
+    const btn = document.getElementById("admin-maintenance-toggle-btn");
+    const stat = document.getElementById("admin-stat-maintenance");
+
+    if (stat) stat.textContent = active ? "ACTIVO 🔴" : "INACTIVO 🟢";
+    if (btn) {
+      btn.textContent = active ? "⚠️ DESACTIVAR MANTENIMIENTO" : "⚠️ ACTIVAR MANTENIMIENTO";
+      btn.style.background = active ? "#22c55e" : "#ef4444";
+      btn.style.color = "#fff";
+      btn.style.border = "none";
+    }
+  });
+
+  // Escuchar anuncio para el campo
+  db.ref("system_announcement").once("value", (snap) => {
+    const text = snap.val() || "";
+    const inp = document.getElementById("admin-announcement-input");
+    if (inp) inp.value = text;
+  });
+}
+
+function renderAdminDashboardUsersList(users, query = "") {
+  const tbody = document.getElementById("admin-dashboard-users-tbody");
+  if (!tbody) return;
+
+  let html = "";
+  let count = 0;
+
+  for (let key in users) {
+    if (key === "admin") continue;
+    const u = users[key];
+    const username = u.username || "Vecino Anónimo";
+    
+    if (query && !username.toLowerCase().includes(query.toLowerCase())) {
+      continue;
+    }
+
+    count++;
+    const avatar = u.avatar || "img/personajes/coque.webp";
+    const coins = u.coins || 0;
+
+    html += `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+        <td style="padding:8px 5px; display:flex; align-items:center; gap:8px;">
+          <img src="${avatar}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; object-position:top; border:1px solid rgba(255,255,255,0.1)">
+          <span style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:0.95rem; color:#fff;">${username}</span>
+        </td>
+        <td style="padding:8px 5px; text-align:center; font-family:'Barlow Condensed',sans-serif; color:#ffd700; font-weight:bold;">${coins} 🪙</td>
+        <td style="padding:8px 5px; text-align:center;">
+          <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+            <button onclick="adminDashboardGiveCoins('${key}', '${username}')" style="background:rgba(240,192,32,0.12); border:1px solid var(--accent); color:var(--accent); padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">+🪙</button>
+            <button onclick="adminDashboardManageCards('${key}', '${username}')" style="background:rgba(168,85,247,0.12); border:1px solid #c084fc; color:#c084fc; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">🃏 Mazos</button>
+            <button onclick="adminDashboardResetStats('${key}', '${username}')" style="background:rgba(96,165,250,0.12); border:1px solid #60a5fa; color:#60a5fa; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">🔄 Reset</button>
+            <button onclick="adminDashboardDeleteUser('${key}', '${username}')" style="background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:4px 8px; border-radius:6px; font-size:0.75rem; cursor:pointer; font-family:'Barlow Condensed',sans-serif;">❌</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  if (count === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text2);">No se encontraron vecinos registrados.</td></tr>`;
+  } else {
+    tbody.innerHTML = html;
+  }
+}
+
+function filterAdminDashboardUsers() {
+  const query = document.getElementById("admin-dashboard-search").value.trim();
+  renderAdminDashboardUsersList(cachedAdminDashboardUsers, query);
+}
+
+function adminDashboardGiveCoins(key, username) {
+  adminGiveCoins(key, username);
+}
+
+function adminDashboardManageCards(key, username) {
+  adminManagePlayerCards(key, username);
+}
+
+function adminDashboardResetStats(key, username) {
+  adminResetStats(key, username);
+}
+
+function adminDashboardDeleteUser(key, username) {
+  adminDeleteUser(key, username);
+}
+
+async function toggleGlobalMaintenance() {
+  const db = firebase.database();
+  const snap = await db.ref("system_maintenance").once("value");
+  const current = !!snap.val();
+  await db.ref("system_maintenance").set(!current);
+}
+
+async function publishGlobalAnnouncement() {
+  const text = document.getElementById("admin-announcement-input").value.trim();
+  const db = firebase.database();
+  await db.ref("system_announcement").set(text);
+  
+  if (window.showLqsaAlert) {
+    window.showLqsaAlert("📢 Anuncio global publicado con éxito en la comunidad.", "AVISO PUBLICADO", "success");
+  } else {
+    alert("📢 Anuncio global publicado.");
+  }
+}
+
+async function clearGlobalAnnouncement() {
+  const db = firebase.database();
+  await db.ref("system_announcement").set("");
+  const inp = document.getElementById("admin-announcement-input");
+  if (inp) inp.value = "";
+  
+  if (window.showLqsaAlert) {
+    window.showLqsaAlert("📢 Anuncio global retirado de las pantallas.", "AVISO RETIRADO", "info");
+  } else {
+    alert("📢 Anuncio global retirado.");
+  }
+}
+
+async function adminRainCoins(amount) {
+  const db = firebase.database();
+  if (Object.keys(cachedAdminDashboardUsers).length === 0) return;
+
+  const updates = {};
+  for (let key in cachedAdminDashboardUsers) {
+    if (key === "admin") continue;
+    const currentCoins = cachedAdminDashboardUsers[key].coins || 0;
+    updates[`users/${key}/coins`] = currentCoins + amount;
+  }
+
+  await db.ref().update(updates);
+  
+  if (window.showLqsaAlert) {
+    window.showLqsaAlert(`🪙 ¡Lluvia completada! Inyectadas ${amount} monedas a todos los vecinos.`, "LLUVIA DE MONEDAS", "success");
+  } else {
+    alert(`¡Lluvia completada! Inyectadas ${amount} monedas a todos.`);
+  }
+}
+
+function updateGlobalAnnouncementBanner(text) {
+  let bar = document.getElementById("global-announcement-marquee");
+  
+  if (!text || text.trim() === "") {
+    if (bar) bar.remove();
+    document.body.style.paddingTop = "0px";
+    return;
+  }
+
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "global-announcement-marquee";
+    bar.className = "marquee-announcement-bar";
+    document.body.appendChild(bar);
+  }
+
+  bar.innerHTML = `
+    <div class="marquee-content">
+      <span>📢 AVISO OFICIAL DE LA COMUNIDAD: ${text}</span>
+      <span>📢 AVISO OFICIAL DE LA COMUNIDAD: ${text}</span>
+      <span>📢 AVISO OFICIAL DE LA COMUNIDAD: ${text}</span>
+    </div>
+  `;
+
+  document.body.style.paddingTop = "32px";
+}
+
+function handleMaintenanceScreen(active) {
+  const savedUser = localStorage.getItem("lqsa_user");
+  
+  if (active && savedUser !== "admin") {
+    let overlay = document.getElementById("global-maintenance-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "global-maintenance-overlay";
+      overlay.className = "maintenance-fullscreen-overlay";
+      overlay.innerHTML = `
+        <div class="maintenance-card">
+          <div class="maintenance-icon">🛠️</div>
+          <h2 style="font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#ffd700; margin:0;">🚨 COMUNIDAD EN REFORMAS 🚨</h2>
+          <p style="font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; color:#fff; line-height:1.4; margin:10px 0;">
+            Vecinos, el conserje Coque y el presidente están haciendo tareas de mantenimiento preventivo.<br>
+            ¡Montepinar y Contubernio estarán listas muy pronto!
+          </p>
+          <div style="font-size:0.8rem; color:#888; border-top:1px solid rgba(255,255,255,0.1); width:100%; padding-top:12px; margin-top:8px; font-family:'Barlow Condensed',sans-serif; text-transform:uppercase;">
+            Disculpad las molestias · Junta General Extraordinaria
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+  } else {
+    const overlay = document.getElementById("global-maintenance-overlay");
+    if (overlay) overlay.remove();
   }
 }

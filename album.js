@@ -30,15 +30,15 @@ const DUO_RECIPES = [
     ]
   },
   {
-    id: "duo-amador-leo",
+    id: "duo-amador-maxi",
     name: "Los Leones (¡Mente Fría!)",
-    ingredients: ["amador-rivas", "leo-romani"],
+    ingredients: ["amador-rivas", "maxi-angulo"],
     coinsCost: 200,
     number: "D02",
     occupation: "Leones de Montepinar",
     season: "T1-T8",
     type: "Dúo Histórico",
-    quote: "¡¿Qué pasa?! ¡Claro que sí, hombre! ¡Mente fría, león!",
+    quote: "¡Atrás! ¡No me obligues a hacerte el molinillo! ¡Mente fría, león!",
     image: "img/personajes/amador-rivas.webp",
     hp: 400,
     atk: 190,
@@ -46,7 +46,7 @@ const DUO_RECIPES = [
     combatType: "Dúo León",
     attacks: [
       { name: "Rugido del León", power: 90, desc: "Aumenta la fuerza de ataque de todo tu mazo." },
-      { name: "¡Pinchito con Leo!", power: 180, desc: "Ataque combinado arrollador en el Max&Henry." }
+      { name: "¡El Molinillo con Amador!", power: 180, desc: "Ataque combinado arrollador en el Max&Henry." }
     ]
   },
   {
@@ -116,7 +116,7 @@ function enhanceCardsWithCombatStats() {
       baseHp = 265; baseAtk = 105; baseDef = 90;
     }
 
-    // Asignar clase de combate elemental según Lore de LQSA
+    // Asignar clase de combate elemental según Lore de LQSA con distribución uniforme
     const nameUpper = card.name.toUpperCase();
     if (nameUpper.includes("RECIO") || nameUpper.includes("BERTA")) {
       combatType = "Mayorista";
@@ -127,15 +127,46 @@ function enhanceCardsWithCombatStats() {
     } else if (nameUpper.includes("FERMÍN") || nameUpper.includes("TRUJILLO") || nameUpper.includes("COQUE") || nameUpper.includes("MAXI")) {
       combatType = "Buscavidas";
     } else {
-      combatType = "Inquilino";
+      // Distribución determinista por hash de nombre para evitar saturación de Planta
+      const types = ["Mayorista", "León", "Junta", "Buscavidas", "Inquilino"];
+      let hash = 0;
+      for (let i = 0; i < card.name.length; i++) {
+        hash = card.name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      combatType = types[Math.abs(hash) % types.length];
     }
 
-    // Definición de Ataques y Habilidades Especiales
-    let attacks = [
-      { name: "Disputa Vecinal", power: 35, desc: "Crea una derrama sorpresa que desquicia al oponente." },
-      { name: "¡Cuchufleta!", power: 50, desc: "Un golpe de afecto inesperado." }
-    ];
+    // Definición de Ataques y Habilidades Especiales según su Elemento/Tipo de Combate
+    let attacks = [];
+    if (combatType === "Mayorista") {
+      attacks = [
+        { name: "Aceite Marisquero", power: 45, desc: "Lanza aceite hirviendo de la freidora de la marisquería." },
+        { name: "Bogavante Picante", power: 65, desc: "Furia roja del bogavante cabreado de Antonio." }
+      ];
+    } else if (combatType === "León") {
+      attacks = [
+        { name: "Rugido de Albacete", power: 45, desc: "Rugido electrizante de león que asusta al rival." },
+        { name: "Chispazo Cuqui", power: 65, desc: "Descarga estática provocada por el pelo de Amador." }
+      ];
+    } else if (combatType === "Junta") {
+      attacks = [
+        { name: "Acta Insufrida", power: 45, desc: "Ataque mental que agota al rival leyendo actas aburridas." },
+        { name: "Manipulación de Votos", power: 65, desc: "Desvía la cordura y confunde al contrincante." }
+      ];
+    } else if (combatType === "Buscavidas") {
+      attacks = [
+        { name: "Chorro Limpiador", power: 40, desc: "Disparo a presión de agua jabonosa y amoniaco de Coque." },
+        { name: "Ola de Astucia", power: 65, desc: "Un tsunami de astucia callejera que empapa al rival." }
+      ];
+    } else {
+      // Inquilino (Planta)
+      attacks = [
+        { name: "Liana Enredadera", power: 40, desc: "Hiedras y geranios del balcón para inmovilizar." },
+        { name: "Esporas Vecinales", power: 65, desc: "Polen del invernadero secreto que confunde los sentidos." }
+      ];
+    }
 
+    // Sobrescribir ataques específicos para personajes icónicos
     if (card.name.includes("Recio")) {
       attacks = [
         { name: "Lanzamiento de Centollo", power: 65, desc: "Lanza un bogavante fresco directo a la cara." },
@@ -177,6 +208,28 @@ function enhanceCardsWithCombatStats() {
 
   // Inyectar Dúos Dinámicos al Catálogo general para que se rendericen en el álbum
   DUO_RECIPES.forEach(recipe => {
+    const ing1Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[0]);
+    const ing2Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[1]);
+    
+    let mixedCombatType = recipe.combatType;
+    let mixedAttacks = recipe.attacks;
+    
+    if (ing1Card && ing2Card) {
+      mixedCombatType = `${ing1Card.combatType} + ${ing2Card.combatType}`;
+      mixedAttacks = [
+        { 
+          name: ing1Card.attacks[0].name, 
+          power: Math.round(ing1Card.attacks[0].power * 1.5), 
+          desc: `Técnica combinada de ${ing1Card.name}.` 
+        },
+        { 
+          name: ing2Card.attacks[0].name, 
+          power: Math.round(ing2Card.attacks[0].power * 1.5), 
+          desc: `Técnica combinada de ${ing2Card.name}.` 
+        }
+      ];
+    }
+
     ALBUM_CARDS.push({
       id: recipe.id,
       number: recipe.number,
@@ -190,8 +243,8 @@ function enhanceCardsWithCombatStats() {
       hp: recipe.hp,
       atk: recipe.atk,
       def: recipe.def,
-      combatType: recipe.combatType,
-      attacks: recipe.attacks,
+      combatType: mixedCombatType,
+      attacks: mixedAttacks,
       isDuo: true,
       ingredients: recipe.ingredients,
       coinsCost: recipe.coinsCost
@@ -321,6 +374,32 @@ async function buyPack(packId) {
     return;
   }
 
+  if (window._packBuyingCooldown) {
+    console.log("Comprando sobre - Cooldown activo");
+    return;
+  }
+
+  // Activar cooldown
+  window._packBuyingCooldown = true;
+
+  // Feedback visual desactivando botones de compra
+  const buyBtns = document.querySelectorAll(".btn-premium-shop, .buy-pack-btn");
+  buyBtns.forEach(btn => {
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+  });
+
+  const resetCooldown = () => {
+    window._packBuyingCooldown = false;
+    buyBtns.forEach(btn => {
+      btn.style.opacity = "1";
+      btn.style.pointerEvents = "auto";
+    });
+  };
+
+  // Liberar cooldown tras 2.2 segundos
+  setTimeout(resetCooldown, 2200);
+
   const pack = PACK_TYPES[packId];
   if (userAlbumData.coins < pack.cost) {
     if (window.showLqsaAlert) showLqsaAlert("¡No tienes suficientes monedas! Gana partidas o completa misiones de vecinos. 🦞", "MONEDAS INSUFICIENTES", "error");
@@ -374,6 +453,13 @@ async function buyPack(packId) {
 
 function rollRandomCard(guaranteeRarityId = null) {
   let rand = Math.random();
+
+  // 0.3% de probabilidad de que la carta sea una versión Holográfica/Foil especial mejorada (muy difícil)
+  if (rand < 0.003) {
+    const randomCard = ALBUM_CARDS[Math.floor(Math.random() * ALBUM_CARDS.length)];
+    return { ...randomCard, isFoil: true, rarity: CARD_RARITIES.FOIL };
+  }
+
   let selectedRarity = CARD_RARITIES.COMMON;
 
   // Si hay garantía forzada por el tipo de sobre
@@ -382,11 +468,11 @@ function rollRandomCard(guaranteeRarityId = null) {
     if (guaranteeRarityId === "epic") selectedRarity = CARD_RARITIES.EPIC;
     if (guaranteeRarityId === "legendary") selectedRarity = CARD_RARITIES.LEGENDARY;
   } else {
-    // Distribución de probabilidad acumulada
-    if (rand < 0.005) return { ...ALBUM_CARDS[Math.floor(Math.random() * ALBUM_CARDS.length)], isFoil: true, rarity: CARD_RARITIES.FOIL };
-    if (rand < 0.03) selectedRarity = CARD_RARITIES.LEGENDARY;
-    else if (rand < 0.15) selectedRarity = CARD_RARITIES.EPIC;
-    else if (rand < 0.40) selectedRarity = CARD_RARITIES.RARE;
+    // Distribución de probabilidad acumulada estándar
+    let normalRoll = Math.random();
+    if (normalRoll < 0.02) selectedRarity = CARD_RARITIES.LEGENDARY;
+    else if (normalRoll < 0.12) selectedRarity = CARD_RARITIES.EPIC;
+    else if (normalRoll < 0.35) selectedRarity = CARD_RARITIES.RARE;
   }
 
   let pool = ALBUM_CARDS.filter(c => c.baseRarity.id === selectedRarity.id);
@@ -642,6 +728,21 @@ function applyFilters() {
   renderAlbumPages();
 }
 
+function getCardImageHtml(card, heightPct = "48%") {
+  if (card.isDuo && card.ingredients && card.ingredients.length >= 2) {
+    return `
+      <div class="card-img card-img-duo" style="display: flex; height: ${heightPct}; border-bottom: 2px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; width: 100%;">
+        <img src="img/personajes/${card.ingredients[0]}.webp" onerror="this.src='img/personajes/amador-rivas.webp'" style="width: 50%; height: 100%; object-fit: cover; object-position: top; border-right: 1px solid rgba(240, 192, 32, 0.4);">
+        <img src="img/personajes/${card.ingredients[1]}.webp" onerror="this.src='img/personajes/coque.webp'" style="width: 50%; height: 100%; object-fit: cover; object-position: top;">
+        <div style="position: absolute; top: 0; left: 50%; height: 100%; width: 2px; background: linear-gradient(to bottom, #ffd700, #facc15); transform: translateX(-50%); box-shadow: 0 0 8px #ffd700;"></div>
+      </div>
+    `;
+  }
+  return `
+    <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: ${heightPct}; width: 100%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;">
+  `;
+}
+
 function renderPocketHtml(cardIndex) {
   if (cardIndex >= filteredCards.length) {
     // Empty sleeve slots at the end of the album
@@ -685,7 +786,7 @@ function renderPocketHtml(cardIndex) {
             <div class="pocket-glare"></div>
             <div class="tcg-card" style="border: 2px solid ${borderCol};">
                 <div class="card-rarity-badge" style="background: ${isFoil ? 'linear-gradient(45deg, #f43f5e, #3b82f6, #10b981)' : card.baseRarity.color}; color: ${isFoil ? '#fff' : '#000'};">${rarityName}</div>
-                <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'">
+                ${getCardImageHtml(card, "48%")}
                 <div class="card-info-box">
                     <div class="card-name">${card.name}</div>
                     <div class="card-job">💼 ${card.occupation}</div>
@@ -832,7 +933,7 @@ function zoomCard(cardId, isFoil = false) {
             <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
               ${rarityName} ${signed ? '✒️ FIRMADA' : ''}
             </div>
-            <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 48%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+            ${getCardImageHtml(card, "48%")}
             
             <div class="card-info-box" style="padding: 12px 16px; height: 52%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.96);">
               <div style="text-align: left; overflow-y: auto; max-height: 100%;">
@@ -1184,7 +1285,7 @@ function openAlbumUI() {
             🪙 <span style="color:#ffd700; font-size:1.15rem; font-family:'Bebas Neue',sans-serif;">${userAlbumData.coins}</span> Monedas
           </div>
           <button class="btn-premium-shop" onclick="openShopUI()">🛒 Tienda</button>
-          <button class="btn-premium-missions" onclick="openMissionsUI()">📅 Misiones</button>
+          <button class="btn-premium-missions" onclick="openMissionsUI(true)">📅 Misiones</button>
           <button class="btn-premium-workshop" onclick="openWorkshopUI()">🛠️ Taller Vecinal</button>
           <button class="btn-premium-shop" style="background:linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #dc2626 100%); border: 1px solid rgba(220, 38, 38, 0.45); box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);" onclick="openCardDuelLobby()">⚔️ Duelo TCG</button>
         </div>
@@ -1260,7 +1361,7 @@ function openAlbumUI() {
         
         <!-- Bottom metadata bar -->
         <div class="album-bottom-bar" id="album-desktop-bottom-bar">
-          <span style="font-size:0.75rem; color:#64748b; font-style:italic;">Consejo: Consigue 3 copias de una carta para fusionarla permanentemente a versión holográfica 🌈</span>
+          <span style="font-size:0.75rem; color:#64748b; font-style:italic;">Hay versiones Holograficas mejoradas que pueden tocar en sobres (es muy dificil).</span>
           <!-- Desk spline counts -->
           <span id="album-page-counter">Cargando...</span>
         </div>
@@ -1320,12 +1421,52 @@ function openShopUI() {
           <button class="auth-btn" onclick="buyPack('legendary')" style="width: 100%; justify-content: center; margin: 0; background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; font-weight: bold; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255,215,0,0.25);">💰 300 MONEDAS</button>
         </div>
       </div>
+
+      <!-- ⚡ Apertura Rápida -->
+      <div style="margin-top:28px; padding:16px 20px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:var(--accent); letter-spacing:1px;">⚡ APERTURA RÁPIDA</div>
+          <div style="font-size:0.78rem; color:#64748b; margin-top:2px;">Muestra todas las cartas directamente sin animación paso a paso.</div>
+        </div>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;">
+          <div style="position:relative; width:50px; height:26px;">
+            <input type="checkbox" id="fast-open-toggle" onchange="window._fastPackOpening=this.checked; localStorage.setItem('lqsa_fast_opening', this.checked ? '1' : '0');"
+              ${localStorage.getItem('lqsa_fast_opening')==='1' ? 'checked' : ''}
+              style="opacity:0; width:0; height:0; position:absolute;">
+            <span id="fast-open-slider" style="position:absolute; inset:0; background:${localStorage.getItem('lqsa_fast_opening')==='1' ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; border-radius:26px; transition:background 0.25s; border:1px solid rgba(255,255,255,0.15);"></span>
+            <span id="fast-open-knob" style="position:absolute; top:3px; left:${localStorage.getItem('lqsa_fast_opening')==='1' ? '27px' : '3px'}; width:20px; height:20px; background:#fff; border-radius:50%; transition:left 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></span>
+          </div>
+          <span style="color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:bold;">${localStorage.getItem('lqsa_fast_opening')==='1' ? 'Activada' : 'Desactivada'}</span>
+        </label>
+      </div>
     </div>
   `;
+  // Sync the _fastPackOpening flag on open
+  window._fastPackOpening = localStorage.getItem('lqsa_fast_opening') === '1';
+  // Wire up toggle visuals after render
+  setTimeout(() => {
+    const cb = document.getElementById('fast-open-toggle');
+    const slider = document.getElementById('fast-open-slider');
+    const knob = document.getElementById('fast-open-knob');
+    const label = cb?.parentElement?.querySelector('span:last-child');
+    if (cb) cb.addEventListener('change', () => {
+      window._fastPackOpening = cb.checked;
+      localStorage.setItem('lqsa_fast_opening', cb.checked ? '1' : '0');
+      if (slider) slider.style.background = cb.checked ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
+      if (knob) knob.style.left = cb.checked ? '27px' : '3px';
+      if (label) label.textContent = cb.checked ? 'Activada' : 'Desactivada';
+    });
+  }, 0);
   document.body.appendChild(overlay);
 }
 
-function openMissionsUI() {
+function openMissionsUI(fromAlbum = null) {
+  if (fromAlbum !== null) {
+    window._missionsOpenedFromAlbum = fromAlbum;
+  } else {
+    fromAlbum = window._missionsOpenedFromAlbum || false;
+  }
+
   let overlay = document.getElementById("auth-modal");
   let isNew = false;
 
@@ -1357,7 +1498,7 @@ function openMissionsUI() {
 
   overlay.innerHTML = `
     <div class="auth-box" style="width:min(500px, 94vw); position: relative; border: 2px solid #8b5cf6; background:radial-gradient(circle at 50% 50%, #18113c 0%, #080516 100%); box-shadow:0 8px 30px rgba(0,0,0,0.8); box-sizing:border-box;">
-      <button class="auth-x" onclick="closeAllModals(); openAlbumUI();" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; font-weight: bold; cursor: pointer; position: absolute; top: 20px; right: 20px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
+      <button class="auth-x" onclick="closeAllModals(); ${fromAlbum ? 'openAlbumUI();' : ''}" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; font-weight: bold; cursor: pointer; position: absolute; top: 20px; right: 20px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
       <h2 class="auth-h2" style="color:#c084fc; padding-right: 50px; text-shadow:0 0 15px rgba(124,58,237,0.4); font-family:'Bebas Neue',sans-serif; font-size:2.4rem; letter-spacing:1px;">📅 MISIONES DIARIAS</h2>
       <p class="auth-p" style="color:#94a3b8; font-size:0.92rem; margin:6px 0 18px 0; text-align:center;">Completa tareas diarias para financiar tu vicio por los sobres de cartas.</p>
       <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
@@ -1469,13 +1610,32 @@ function startRevealingCards() {
   const packPart = document.getElementById("pack-part-top");
   if (!packPart) return;
 
-  // 1. Efecto vibración inicial
+  // ⚡ APERTURA RÁPIDA: saltar animaciones y mostrar galería directamente
+  if (window._fastPackOpening) {
+    playPackSound('rip');
+    document.getElementById("pack-rip-view").style.display = "none";
+    if (typeof confetti === "function") {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+    }
+    // Check if any foil card to trigger special effect
+    const hasFoil = openingCardsList.some(c => c.isFoil || (c.rarity && c.rarity.id === 'foil'));
+    if (hasFoil) {
+      setTimeout(() => confetti({ particleCount: 120, spread: 120, origin: { y: 0.4 }, colors: ['#ff0055','#00ff88','#0099ff','#ff9900','#cc00ff'] }), 200);
+      playPackSound('foil');
+    }
+    setTimeout(() => displaySummaryGallery(), 350);
+    return;
+  }
+
+  // 1. Efecto vibración inicial + sonido de rumble
+  playPackSound('shake');
   packPart.classList.add("shaking");
 
   setTimeout(() => {
-    // 2. Efecto rasgado arriba/abajo
+    // 2. Efecto rasgado arriba/abajo + sonido de rasgado
     packPart.classList.remove("shaking");
     packPart.classList.add("ripped-top");
+    playPackSound('rip');
 
     // Destello corto de luces confeti al rasgar
     if (typeof confetti === "function") {
@@ -1488,6 +1648,78 @@ function startRevealingCards() {
       loadOpeningCard(0);
     }, 600);
   }, 450);
+}
+
+// ── Web Audio API: Sintetizador de sonidos cinemáticos de sobre ──────────────
+function playPackSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'shake') {
+      // Rumble bajo — vibración grave
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.45, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.15));
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.35, 0);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 120;
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+    } else if (type === 'rip') {
+      // Desgarro — ruido de alta frecuencia rápido
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.5, 0);
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+    } else if (type === 'flip') {
+      // Chasquido suave al voltear carta
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } else if (type === 'foil') {
+      // Destello mágico arcoíris para carta Foil — glissando ascendente + shimmer
+      for (let s = 0; s < 4; s++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const delay = s * 0.06;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400 + s * 200, ctx.currentTime + delay);
+        osc.frequency.exponentialRampToValueAtTime(1600 + s * 300, ctx.currentTime + delay + 0.4);
+        gain.gain.setValueAtTime(0.0, ctx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + delay + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.5);
+      }
+    }
+  } catch(e) {
+    // AudioContext bloqueado por política del navegador — silencio sin error
+  }
 }
 
 function drawDeckShadows(currentIndex) {
@@ -1542,7 +1774,7 @@ function loadOpeningCard(index) {
       <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.5px; border-radius: 4px; z-index: 5;">
         ${rarity.name}
       </div>
-      <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+      ${getCardImageHtml(card, "52%")}
       
       <div class="card-info-box" style="padding: 12px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.95);">
         <div style="text-align: left;">
@@ -1584,6 +1816,9 @@ function flipCurrentOpeningCard() {
   cardEl.classList.add("revealed");
   document.getElementById("reveal-card-instruction").style.display = "none";
 
+  // Sonido de volteo
+  playPackSound('flip');
+
   const nextBtn = document.getElementById("reveal-next-btn");
   nextBtn.style.display = "inline-flex";
 
@@ -1610,6 +1845,11 @@ function flipCurrentOpeningCard() {
     } else if (rarity.id === "rare") {
       confetti({ particleCount: 30, spread: 45, origin: { y: 0.6 }, colors: ['#3b82f6', '#fff'] });
     }
+  }
+
+  // Sonido especial de destello para cartas Foil
+  if (rarity.id === "foil" || card.isFoil) {
+    setTimeout(() => playPackSound('foil'), 150);
   }
 
   // Inicializar el controlador del efecto de inclinación 3D Parallax
@@ -1700,6 +1940,14 @@ function displaySummaryGallery() {
   const overlay = document.getElementById("auth-modal");
   if (!overlay) return;
 
+  // Normalizar estilos del overlay para la galería (tanto modo normal como apertura rápida)
+  overlay.style.overflowY = "auto";
+  overlay.style.overflowX = "hidden";
+  overlay.style.alignItems = "flex-start";
+  overlay.style.justifyContent = "center";
+  overlay.style.paddingTop = "20px";
+  overlay.style.paddingBottom = "20px";
+
   let galleryCardsHtml = openingCardsList.map((card, idx) => {
     const rarity = card.rarity || card.baseRarity || CARD_RARITIES.COMMON;
     const borderCol = rarity.color;
@@ -1717,7 +1965,7 @@ function displaySummaryGallery() {
                 <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.5px; border-radius: 4px; z-index: 5;">
                   ${rarity.name}
                 </div>
-                <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+                ${getCardImageHtml(card, "52%")}
                 
                 <div class="card-info-box" style="padding: 10px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.95);">
                   <div style="text-align: left;">
@@ -1866,7 +2114,7 @@ function openWorkshopUI() {
         const userCard = userAlbumData.cards[card.id];
         const currentLvl = userCard.level || 1;
         const dups = userCard.count - 1;
-        const cost = currentLvl; // Coste para subir nivel = nivel actual
+        const cost = 1; // El coste para subir nivel es siempre 1 cromo repetido
         const canUpgrade = dups >= cost;
 
         return `
@@ -1992,7 +2240,7 @@ async function upgradeDesquicieLevel(cardId) {
   if (!userCard) return;
 
   const currentLvl = userCard.level || 1;
-  const required = currentLvl; // Coste en repetidos = nivel actual
+  const required = 1; // El coste en repetidos siempre es exactamente 1 cromo desquicio 1
 
   if (userCard.count < 1 + required) {
     if (window.showLqsaAlert) showLqsaAlert("No tienes suficientes repetidos para esta mejora.", "MEJORA IMPOSIBLE", "error");
@@ -2004,7 +2252,7 @@ async function upgradeDesquicieLevel(cardId) {
 
   await cardRef.transaction(current => {
     const lvl = current.level || 1;
-    const reqCost = lvl;
+    const reqCost = 1; // Descontar exactamente 1 repetido para subir nivel
     if (current && current.count >= 1 + reqCost && lvl < 5) {
       return {
         count: current.count - reqCost,
