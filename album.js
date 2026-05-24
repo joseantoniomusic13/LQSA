@@ -3111,6 +3111,14 @@ const ELEMENT_ADVANTAGES = {
   "Buscavidas": { "León": 1.5, "Inquilino": 0.5 }
 };
 
+window.collapsedCardGroups = window.collapsedCardGroups || {};
+
+function toggleCardDuelGroup(typeKey) {
+  window.collapsedCardGroups = window.collapsedCardGroups || {};
+  window.collapsedCardGroups[typeKey] = !window.collapsedCardGroups[typeKey];
+  openCardDuelLobby();
+}
+
 function openCardDuelLobby() {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) {
@@ -3165,6 +3173,9 @@ function renderCardDuelLobbyHtml(overlay, ownedCards) {
     if (cards.length === 0) return "";
     const lType = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES && LQSA_TYPES[typeKey]) ? LQSA_TYPES[typeKey] : { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
 
+    // Check if group is minimized/collapsed
+    const isCollapsed = !!(window.collapsedCardGroups && window.collapsedCardGroups[typeKey]);
+
     const cardsHtml = cards.map(card => {
       const userCard = userAlbumData.cards[card.id] || { level: 1, signed: false };
       const level = userCard.level || 1;
@@ -3196,11 +3207,12 @@ function renderCardDuelLobbyHtml(overlay, ownedCards) {
 
     return `
       <div style="margin-bottom: 12px; text-align: left;">
-        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; font-weight: bold; font-family:'Barlow Condensed',sans-serif; color:${lType.color}; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom: 8px; text-transform:uppercase;">
+        <div onclick="toggleCardDuelGroup('${typeKey}')" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; font-weight: bold; font-family:'Barlow Condensed',sans-serif; color:${lType.color}; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom: 8px; text-transform:uppercase; cursor:pointer; user-select:none; transition:all 0.2s;" onmouseenter="this.style.background='rgba(255,255,255,0.06)'" onmouseleave="this.style.background='rgba(255,255,255,0.03)'">
+          <span style="font-size: 0.8rem; margin-right: 4px; transition: transform 0.2s; display: inline-block; color: ${lType.color};">${isCollapsed ? '▶' : '▼'}</span>
           <span>${lType.icon} ${lType.label || typeKey}</span>
-          <span style="margin-left:auto; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px; color:#cbd5e1;">${cards.length} cromos</span>
+          <span style="margin-left:auto; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px; color:#cbd5e1;">${cards.length} ${cards.length === 1 ? 'cromo' : 'cromos'}</span>
         </div>
-        <div>
+        <div style="${isCollapsed ? 'display: none;' : ''}">
           ${cardsHtml}
         </div>
       </div>
