@@ -935,7 +935,7 @@ function displayPackOpeningAnimation(cards, packId = "basic") {
     overlay.id = "auth-modal";
     overlay.className = "auth-overlay album-overlay-theme";
     overlay.style.background = "rgba(8, 8, 12, 0.98)";
-    overlay.style.backdropFilter = "blur(20px)";
+    overlay.style.backdropFilter = "blur(25px)";
 
     let packImg = "img-cartas/sobre-basico.webp";
     let packTitle = "SOBRE BÁSICO";
@@ -949,47 +949,63 @@ function displayPackOpeningAnimation(cards, packId = "basic") {
 
     overlay.innerHTML = `
     <!-- Vista del Sobre Cerrado -->
-    <div id="pack-rip-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 80vh; gap: 20px;">
-      <h2 style="font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: #fff; letter-spacing: 2px; margin: 0; text-shadow: 0 0 15px rgba(255,255,255,0.2);">${packTitle}</h2>
-      <p style="color: #a0a0a0; font-size: 0.95rem; margin: 0;">¡Haz clic en el sobre para abrirlo y revelar su contenido!</p>
+    <div id="pack-rip-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 85vh; gap: 24px; perspective: 1200px;">
+      <h2 style="font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: #fff; letter-spacing: 3px; margin: 0; text-shadow: 0 0 20px rgba(255,255,255,0.3); text-align: center;">${packTitle}</h2>
+      <p style="color: #94a3b8; font-size: 1rem; margin: -10px 0 10px; font-family: 'Barlow', sans-serif; letter-spacing: 0.5px;">¡Haz clic en el sobre para abrirlo y revelar su contenido!</p>
       
-      <div id="float-pack-container" style="width: 220px; height: 330px; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); animation: packFloat 3s infinite ease-in-out;" 
-           onclick="startRevealingCards()"
-           onmouseenter="this.style.transform='scale(1.05) rotate(2deg)'" 
-           onmouseleave="this.style.transform='scale(1) rotate(0deg)'">
-        <img src="${packImg}" alt="Sobre Cerrado" onload="makeImageTransparent(this)" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.65));">
+      <!-- Sobre 3D -->
+      <div id="float-pack-container" class="premium-pack-wrapper" onclick="startRevealingCards()">
+        <div id="pack-part-top" class="premium-booster-pack booster-${packId}">
+          <div class="pack-foil-glare"></div>
+          <div class="pack-crimp-edge top"></div>
+          <div class="pack-art-container">
+            <div class="pack-header-tcg">LQSA VECINAL</div>
+            <img class="pack-art-img" src="${packImg}" alt="${packTitle}" onerror="this.src='img/personajes/antonio-recio.webp'" onload="makeImageTransparent(this)">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <div class="pack-title-text">${packTitle}</div>
+              <div class="pack-bottom-badge">T1 — EDICIÓN LIMITADA</div>
+            </div>
+          </div>
+          <div class="pack-crimp-edge bottom"></div>
+        </div>
       </div>
     </div>
 
     <!-- Vista de Revelado de Cartas de una en una -->
-    <div id="pack-card-reveal-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 80vh; gap: 20px;">
-      <div id="reveal-progress-text" style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; color: #a0a0a0; letter-spacing: 1.5px; text-transform: uppercase; font-weight: bold;">
+    <div id="pack-card-reveal-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 85vh; gap: 24px; overflow: hidden; width: 100%;">
+      
+      <div id="reveal-progress-text" style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; text-shadow: 0 0 8px rgba(255,255,255,0.1);">
         Carta 1 de ${cards.length}
       </div>
       
-      <!-- Carta Volteable -->
-      <div id="reveal-card-3d" class="tcg-flip-card" onclick="flipCurrentOpeningCard()">
-        <div class="tcg-card-inner" id="reveal-card-inner">
-          <!-- Reverso (Back) -->
-          <div class="tcg-card-back">
-            <span style="font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">📘</span>
-            <div class="tcg-card-back-logo">LQSACATENA</div>
-            <div class="tcg-card-back-sub">MONTEPINAR TCG</div>
-            <div class="tcg-card-back-seal">⚓</div>
-          </div>
-          <!-- Anverso (Front) -->
-          <div id="reveal-card-front-content" class="tcg-card-front">
-            <!-- Rellenado Dinámicamente -->
+      <!-- Contenedor del Mazo de Cartas en 3D -->
+      <div class="tcg-deck-container" id="tcg-deck-container">
+        <!-- El mazo físico de sombras apiladas se dibuja dinámicamente -->
+        <div class="tcg-deck-stack" id="tcg-deck-stack"></div>
+        
+        <!-- Carta Volteable Superior (la activa) -->
+        <div id="reveal-card-3d" class="tcg-flip-card" onclick="flipCurrentOpeningCard()">
+          <div class="tcg-card-inner" id="reveal-card-inner">
+            <!-- Reverso (Back) -->
+            <div class="tcg-card-back">
+              <span class="tcg-card-back-seal">⚓</span>
+              <div class="tcg-card-back-logo">LQSACATENA</div>
+              <div class="tcg-card-back-sub">MONTEPINAR TCG</div>
+            </div>
+            <!-- Anverso (Front) -->
+            <div id="reveal-card-front-content" class="tcg-card-front">
+              <!-- Rellenado Dinámicamente -->
+            </div>
           </div>
         </div>
       </div>
       
-      <p id="reveal-card-instruction" style="color: #ffd700; font-size: 0.95rem; font-weight: bold; margin: 0; animation: pulseInstruction 1.5s infinite;">
+      <p id="reveal-card-instruction" style="color: #ffd700; font-size: 1rem; font-weight: bold; margin: 0; animation: pulseInstruction 1.5s infinite; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px; text-transform: uppercase;">
         ¡Haz clic en la carta para darle la vuelta!
       </p>
       
       <button id="reveal-next-btn" class="auth-btn" 
-              style="display: none; min-width: 220px; justify-content: center; font-size: 1.1rem; background: linear-gradient(135deg, #f0c020, #eab308); color: #000; box-shadow: 0 4px 15px rgba(240,192,32,0.3); padding: 10px 20px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px;" 
+              style="display: none; min-width: 220px; justify-content: center; font-size: 1.15rem; background: linear-gradient(135deg, #f0c020, #eab308); color: #000; box-shadow: 0 4px 15px rgba(240,192,32,0.35); padding: 10px 24px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1.5px; border-radius: 50px; cursor: pointer; transition: all 0.2s;" 
               onclick="loadNextOpeningCard()">
         Siguiente Carta ➜
       </button>
@@ -1001,51 +1017,110 @@ function displayPackOpeningAnimation(cards, packId = "basic") {
 }
 
 function startRevealingCards() {
-    const pack = document.getElementById("float-pack-container");
-    if (!pack) return;
+    const packPart = document.getElementById("pack-part-top");
+    if (!packPart) return;
 
-    // Animación de sacudida y rasgado
-    pack.style.animation = "packShake 0.4s ease infinite";
+    // 1. Efecto vibración inicial
+    packPart.classList.add("shaking");
 
     setTimeout(() => {
-        document.getElementById("pack-rip-view").style.display = "none";
-        document.getElementById("pack-card-reveal-view").style.display = "flex";
+        // 2. Efecto rasgado arriba/abajo
+        packPart.classList.remove("shaking");
+        packPart.classList.add("ripped-top");
         
-        loadOpeningCard(0);
-    }, 600);
+        // Destello corto de luces confeti al rasgar
+        if (typeof confetti === "function") {
+            confetti({ particleCount: 30, spread: 40, origin: { y: 0.4 } });
+        }
+
+        setTimeout(() => {
+            document.getElementById("pack-rip-view").style.display = "none";
+            document.getElementById("pack-card-reveal-view").style.display = "flex";
+            loadOpeningCard(0);
+        }, 600);
+    }, 450);
+}
+
+function drawDeckShadows(currentIndex) {
+    const stackEl = document.getElementById("tcg-deck-stack");
+    if (!stackEl) return;
+    
+    let html = "";
+    const remainingCount = openingCardsList.length - 1 - currentIndex;
+    
+    // Dibujamos hasta 4 cartas de profundidad para simular el mazo físico
+    const drawCount = Math.min(remainingCount, 4);
+    for (let i = 0; i < drawCount; i++) {
+        const offsetMultiplier = i + 1;
+        const xOffset = offsetMultiplier * 3;
+        const yOffset = offsetMultiplier * -3;
+        const zOffset = offsetMultiplier * -6;
+        
+        html += `
+          <div class="deck-card-shadow" 
+               style="transform: translate3d(${xOffset}px, ${yOffset}px, ${zOffset}px); z-index: ${5 - i};">
+            <div class="tcg-card-back" style="width: 100%; height: 100%; border-width: 4px; padding: 10px; box-sizing: border-box;">
+              <span class="tcg-card-back-seal" style="font-size: 1.8rem;">⚓</span>
+              <div class="tcg-card-back-logo" style="font-size: 1.4rem;">LQSACATENA</div>
+              <div class="tcg-card-back-sub" style="font-size: 0.6rem;">MONTEPINAR TCG</div>
+            </div>
+          </div>
+        `;
+    }
+    stackEl.innerHTML = html;
 }
 
 function loadOpeningCard(index) {
     const card = openingCardsList[index];
-    const borderCol = card.rarity.color;
+    const rarity = card.rarity || card.baseRarity || CARD_RARITIES.COMMON;
+    const borderCol = rarity.color;
+    const rarityClass = `rarity-design-${rarity.id}`;
+    const isFoil = rarity.id === "foil" || card.isFoil ? "is-foil" : "";
+    const isLegendary = rarity.id === "legendary" ? "is-legendary" : "";
 
     // Actualizar indicador
     document.getElementById("reveal-progress-text").textContent = `Carta ${index + 1} de ${openingCardsList.length}`;
 
     // Rellenar la cara frontal
     const frontEl = document.getElementById("reveal-card-front-content");
-    
-    frontEl.className = "tcg-card-front lqsa-card-item";
-    frontEl.style.border = `3px solid ${borderCol}`;
+    frontEl.className = `tcg-card-front lqsa-card-item ${rarityClass} ${isFoil} ${isLegendary}`;
     frontEl.style.width = "100%";
     frontEl.style.height = "100%";
     frontEl.style.margin = "0";
 
     frontEl.innerHTML = `
-      <div class="card-rarity-badge" style="background:${card.rarity.color}">${card.rarity.name}</div>
-      <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'">
-      <div class="card-info-box" style="padding: 12px; height: calc(100% - 220px); justify-content: space-between; display: flex; flex-direction: column;">
-        <div>
-          <div class="card-name" style="font-size: 1.15rem; margin-bottom: 2px;">${card.name}</div>
-          <div class="card-job" style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px;">💼 ${card.occupation}</div>
-          <div class="card-quote" style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.3;">"${card.quote}"</div>
+      <div class="card-foil-overlay"></div>
+      <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.5px; border-radius: 4px; z-index: 5;">
+        ${rarity.name}
+      </div>
+      <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+      
+      <div class="card-info-box" style="padding: 12px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.95);">
+        <div style="text-align: left;">
+          <div class="card-name" style="font-size: 1.15rem; margin-bottom: 2px; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700;">${card.name}</div>
+          <div class="card-job" style="font-size: 0.8rem; color: #ffd700; margin-bottom: 6px; font-family:'Barlow Condensed', sans-serif;">💼 Ocupación: ${card.occupation}</div>
+          <div class="card-quote" style="font-size: 0.75rem; color: #94a3b8; font-style: italic; line-height: 1.35; max-height: 48px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+            "${card.quote}"
+          </div>
         </div>
-        <div class="card-id-num" style="margin-top: 6px; font-size: 0.65rem; color: var(--text2); align-self: flex-end;">#${card.number}/150</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 4px;">
+          <span style="font-size: 0.65rem; color: #64748b; font-weight: bold;">T. Aparición: ${card.season || "T1"}</span>
+          <span class="card-id-num" style="font-size: 0.68rem; color: #94a3b8; font-family: monospace;">#${card.number}/150</span>
+        </div>
       </div>
     `;
 
-    // Resetear rotación de la carta 3D
-    document.getElementById("reveal-card-3d").classList.remove("revealed");
+    // Redibujar las sombras inferiores del mazo
+    drawDeckShadows(index);
+
+    // Resetear clases y rotación 3D
+    const card3D = document.getElementById("reveal-card-3d");
+    card3D.className = "tcg-flip-card";
+    
+    const innerEl = document.getElementById("reveal-card-inner");
+    innerEl.style.transform = "";
+    innerEl.style.transition = "transform 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.25)";
+
     document.getElementById("reveal-card-instruction").style.display = "block";
     document.getElementById("reveal-next-btn").style.display = "none";
 }
@@ -1061,7 +1136,7 @@ function flipCurrentOpeningCard() {
     nextBtn.style.display = "inline-flex";
 
     if (openingCardIndex === openingCardsList.length - 1) {
-        nextBtn.textContent = "✓ GUARDAR EN COLECCIÓN";
+        nextBtn.textContent = "✓ VER RESUMEN DE COMPRA";
         nextBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
         nextBtn.style.color = "#fff";
         nextBtn.style.boxShadow = "0 4px 15px rgba(16,185,129,0.3)";
@@ -1071,38 +1146,194 @@ function flipCurrentOpeningCard() {
         nextBtn.style.color = "#000";
     }
 
-    // Lanzar confeti según rareza
+    // Efecto confeti de colores basado en rareza
     const card = openingCardsList[openingCardIndex];
+    const rarity = card.rarity || card.baseRarity || CARD_RARITIES.COMMON;
+    
     if (typeof confetti === "function") {
-        if (card.rarity.id === "foil" || card.rarity.id === "legendary") {
-            confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-        } else if (card.rarity.id === "epic") {
-            confetti({ particleCount: 40, spread: 45, origin: { y: 0.6 } });
+        if (rarity.id === "foil" || rarity.id === "legendary") {
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#ffd700', '#ff0055', '#00ff55', '#0055ff'] });
+        } else if (rarity.id === "epic") {
+            confetti({ particleCount: 65, spread: 55, origin: { y: 0.6 }, colors: ['#a855f7', '#3b82f6', '#fff'] });
+        } else if (rarity.id === "rare") {
+            confetti({ particleCount: 30, spread: 45, origin: { y: 0.6 }, colors: ['#3b82f6', '#fff'] });
         }
     }
+
+    // Inicializar el controlador del efecto de inclinación 3D Parallax
+    initCardParallaxEffect();
+}
+
+function initCardParallaxEffect() {
+    const cardEl = document.getElementById("reveal-card-3d");
+    const innerEl = document.getElementById("reveal-card-inner");
+    if (!cardEl || !innerEl) return;
+
+    cardEl.onmousemove = function(e) {
+        if (!cardEl.classList.contains("revealed")) return;
+
+        const rect = cardEl.getBoundingClientRect();
+        // Obtener desplazamiento del cursor respecto al centro de la carta
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+
+        // Limitar la inclinación a max 18 grados
+        const rotateY = (x / (rect.width / 2)) * 18;
+        const rotateX = -(y / (rect.height / 2)) * 18;
+
+        // Sumar 180deg al eje Y porque la cara delantera está invertida
+        innerEl.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+        innerEl.style.transition = "none";
+
+        // Mover el brillo foil metalizado
+        const foilOverlay = cardEl.querySelector(".card-foil-overlay");
+        if (foilOverlay) {
+            const px = 50 + (x / (rect.width / 2)) * 25;
+            const py = 50 + (y / (rect.height / 2)) * 25;
+            foilOverlay.style.setProperty("--foil-x", `${px}%`);
+            foilOverlay.style.setProperty("--foil-y", `${py}%`);
+        }
+    };
+
+    cardEl.onmouseleave = function() {
+        // Volver de forma suave al estado neutro descubierto
+        innerEl.style.transition = "transform 0.5s ease-out";
+        innerEl.style.transform = "rotateY(180deg) rotateX(0deg)";
+        
+        const foilOverlay = cardEl.querySelector(".card-foil-overlay");
+        if (foilOverlay) {
+            foilOverlay.style.setProperty("--foil-x", `50%`);
+            foilOverlay.style.setProperty("--foil-y", `50%`);
+        }
+    };
 }
 
 function loadNextOpeningCard() {
     if (openingCardIndex < openingCardsList.length - 1) {
-        openingCardIndex++;
-        
-        // Efecto visual de desvanecimiento corto al cambiar de carta
         const cardEl = document.getElementById("reveal-card-3d");
-        cardEl.style.transform = "scale(0.8) translateY(20px)";
-        cardEl.style.opacity = "0";
-        cardEl.style.transition = "transform 0.25s, opacity 0.25s";
+        
+        cardEl.onmousemove = null;
+        cardEl.onmouseleave = null;
+
+        // Desencadenar la animación de descarte hacia afuera
+        cardEl.classList.add("slide-out-anim");
 
         setTimeout(() => {
+            openingCardIndex++;
             loadOpeningCard(openingCardIndex);
-            cardEl.style.transform = "scale(1) translateY(0)";
-            cardEl.style.opacity = "1";
-            cardEl.style.transition = "";
-        }, 250);
+            
+            // Animación de entrada de la nueva carta
+            const newCardEl = document.getElementById("reveal-card-3d");
+            newCardEl.classList.add("slide-in-anim");
+            
+            setTimeout(() => {
+                newCardEl.classList.remove("slide-in-anim");
+            }, 650);
+        }, 550);
     } else {
-        // Guardar y regresar
-        closeAllModals();
-        openAlbumUI();
+        // Mostrar la galería de resumen antes del guardado final
+        displaySummaryGallery();
     }
+}
+
+function displaySummaryGallery() {
+    const overlay = document.getElementById("auth-modal");
+    if (!overlay) return;
+
+    let galleryCardsHtml = openingCardsList.map((card, idx) => {
+        const rarity = card.rarity || card.baseRarity || CARD_RARITIES.COMMON;
+        const borderCol = rarity.color;
+        const rarityClass = `rarity-design-${rarity.id}`;
+        const isFoil = rarity.id === "foil" || card.isFoil ? "is-foil" : "";
+        const isLegendary = rarity.id === "legendary" ? "is-legendary" : "";
+
+        return `
+          <div class="tcg-flip-card revealed summary-card-tilt" 
+               style="width:var(--tcg-width); height:var(--tcg-height); transform-style: preserve-3d; perspective: 1000px;"
+               data-index="${idx}">
+            <div class="tcg-card-inner" style="transform: rotateY(180deg); transform-style: preserve-3d; width:100%; height:100%;">
+              <div class="tcg-card-front lqsa-card-item ${rarityClass} ${isFoil} ${isLegendary}" style="width:100%; height:100%;">
+                <div class="card-foil-overlay"></div>
+                <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.5px; border-radius: 4px; z-index: 5;">
+                  ${rarity.name}
+                </div>
+                <img class="card-img" src="${card.image}" onerror="this.src='img/personajes/amador-rivas.webp'" style="height: 52%; object-fit: cover; border-bottom: 2px solid rgba(255,255,255,0.06); object-position: top;" onload="makeImageTransparent(this)">
+                
+                <div class="card-info-box" style="padding: 10px; height: 48%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.95);">
+                  <div style="text-align: left;">
+                    <div class="card-name" style="font-size: 1.05rem; margin-bottom: 1px; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.name}</div>
+                    <div class="card-job" style="font-size: 0.72rem; color: #ffd700; margin-bottom: 4px; font-family:'Barlow Condensed', sans-serif;">💼 ${card.occupation}</div>
+                    <div class="card-quote" style="font-size: 0.65rem; color: #94a3b8; font-style: italic; line-height: 1.25; max-height: 32px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                      "${card.quote}"
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px; margin-top: 2px;">
+                    <span style="font-size: 0.58rem; color: #64748b;">T. Aparición: ${card.season || "T1"}</span>
+                    <span class="card-id-num" style="font-size: 0.62rem; color: #94a3b8; font-family: monospace;">#${card.number}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+    }).join("");
+
+    overlay.innerHTML = `
+      <div class="tcg-summary-gallery-container">
+        <h2 class="tcg-summary-gallery-title">🎉 ¡SOBRE ADQUIRIDO!</h2>
+        <p class="tcg-summary-gallery-subtitle">Estas son las cartas que has incorporado a tu catálogo</p>
+        
+        <div class="tcg-summary-grid">
+          ${galleryCardsHtml}
+        </div>
+        
+        <button class="tcg-save-collection-btn" onclick="closeAllModals(); openAlbumUI();">
+          Guardar en mi Colección ✓
+        </button>
+      </div>
+    `;
+
+    // Inicializar parallax para las cartas de la galería final
+    initSummaryGalleryParallax();
+}
+
+function initSummaryGalleryParallax() {
+    const cardContainers = document.querySelectorAll(".summary-card-tilt");
+    cardContainers.forEach(cardEl => {
+        const innerEl = cardEl.querySelector(".tcg-card-inner");
+        if (!innerEl) return;
+
+        cardEl.onmousemove = function(e) {
+            const rect = cardEl.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+
+            const rotateY = (x / (rect.width / 2)) * 15;
+            const rotateX = -(y / (rect.height / 2)) * 15;
+
+            innerEl.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+            innerEl.style.transition = "none";
+
+            const foilOverlay = cardEl.querySelector(".card-foil-overlay");
+            if (foilOverlay) {
+                const px = 50 + (x / (rect.width / 2)) * 25;
+                const py = 50 + (y / (rect.height / 2)) * 25;
+                foilOverlay.style.setProperty("--foil-x", `${px}%`);
+                foilOverlay.style.setProperty("--foil-y", `${py}%`);
+            }
+        };
+
+        cardEl.onmouseleave = function() {
+            innerEl.style.transition = "transform 0.4s ease-out";
+            innerEl.style.transform = "rotateY(180deg) rotateX(0deg)";
+            
+            const foilOverlay = cardEl.querySelector(".card-foil-overlay");
+            if (foilOverlay) {
+                foilOverlay.style.setProperty("--foil-x", `50%`);
+                foilOverlay.style.setProperty("--foil-y", `50%`);
+            }
+        };
+    });
 }
 
 function injectAlbumStyles() {

@@ -1,0 +1,545 @@
+/* ==========================================================================
+   LQSA TCG — SOBRES Y CARTAS PREMIUM STYLE SHEET
+   ========================================================================== */
+
+:root {
+  --tcg-width: 240px;
+  --tcg-height: 336px;
+  --tcg-back-bg: #090616;
+  --tcg-back-border: #ffd700;
+  
+  /* Rarity Colors */
+  --rarity-common: #9ca3af;
+  --rarity-rare: #3b82f6;
+  --rarity-epic: #a855f7;
+  --rarity-legendary: #ffd700;
+  --rarity-foil: #f43f5e;
+}
+
+/* Base Pack Opening Screen Overlay overrides */
+.auth-overlay.album-overlay-theme {
+  background: radial-gradient(circle at 50% 50%, #0e0a1f 0%, #030208 100%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   1. ANIMACIONES Y DESTELLOS
+   ========================================================================== */
+
+@keyframes packFloat {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes packShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-4px, 2px) rotate(-1.5deg); }
+  20% { transform: translate(4px, -2px) rotate(1.5deg); }
+  30% { transform: translate(-3px, -1px) rotate(-1deg); }
+  40% { transform: translate(3px, 3px) rotate(1deg); }
+  50% { transform: translate(-2px, 1px) rotate(-1.5deg); }
+  60% { transform: translate(2px, -3px) rotate(1.5deg); }
+  70% { transform: translate(-3px, 2px) rotate(-1deg); }
+  80% { transform: translate(3px, -1px) rotate(1deg); }
+  90% { transform: translate(-1px, 2px) rotate(-0.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes packRipTop {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-350px) rotate(-15deg); opacity: 0; }
+}
+
+@keyframes packRipBottom {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(350px) rotate(15deg); opacity: 0; }
+}
+
+@keyframes cardSlideOut {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate3d(500px, -250px, -100px) rotate(45deg) scale(0.6); opacity: 0; }
+}
+
+@keyframes cardSlideIn {
+  0% { transform: translate3d(-300px, 150px, -100px) rotate(-30deg) scale(0.7); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 1; }
+}
+
+@keyframes holographicShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes floatStack {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes pulseInstruction {
+  0% { transform: scale(1); opacity: 0.8; text-shadow: 0 0 5px rgba(255,215,0,0.2); }
+  50% { transform: scale(1.05); opacity: 1; text-shadow: 0 0 15px rgba(255,215,0,0.6); }
+  100% { transform: scale(1); opacity: 0.8; text-shadow: 0 0 5px rgba(255,215,0,0.2); }
+}
+
+@keyframes legendaryGlow {
+  0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2); }
+  50% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.85), inset 0 0 20px rgba(255, 215, 0, 0.4); }
+  100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2); }
+}
+
+@keyframes epicGlow {
+  0% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
+  100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+}
+
+/* ==========================================================================
+   2. EL SOBRE CERRADO (DISEÑO PREMIUM)
+   ========================================================================= */
+
+.premium-pack-wrapper {
+  position: relative;
+  width: 250px;
+  height: 375px;
+  perspective: 1200px;
+  cursor: pointer;
+}
+
+.premium-booster-pack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: #111;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.premium-booster-pack.shaking {
+  animation: packShake 0.4s ease infinite !important;
+}
+
+.premium-booster-pack.ripped-top {
+  animation: packRipTop 0.7s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards !important;
+}
+
+.premium-booster-pack.ripped-bottom {
+  animation: packRipBottom 0.7s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards !important;
+}
+
+/* Foil reflection across the pack */
+.pack-foil-glare {
+  position: absolute;
+  top: 0; left: -150%;
+  width: 300%; height: 100%;
+  background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.2) 48%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.2) 52%, rgba(255,255,255,0.08) 70%, rgba(255,255,255,0) 100%);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  z-index: 10;
+  transition: transform 0.6s ease;
+}
+
+.premium-pack-wrapper:hover .pack-foil-glare {
+  transform: translateX(80%) skewX(-20deg);
+}
+
+/* Pack crimp borders (top & bottom edges) */
+.pack-crimp-edge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 18px;
+  background-image: repeating-linear-gradient(90deg, #222, #222 4px, #444 4px, #444 8px);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+  z-index: 5;
+}
+.pack-crimp-edge.top { top: 0; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.pack-crimp-edge.bottom { bottom: 0; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; transform: rotate(180deg); }
+
+/* Pack specific designs */
+.booster-basic {
+  background: linear-gradient(135deg, #1b1613 0%, #3e322a 50%, #100b08 100%);
+  border: 1px solid rgba(205, 127, 50, 0.35);
+}
+.booster-premium {
+  background: linear-gradient(135deg, #1a1b24 0%, #383a4c 50%, #0d0f15 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.booster-legendary {
+  background: linear-gradient(135deg, #231d04 0%, #524412 50%, #151102 100%);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+.pack-art-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 30px 20px 25px;
+  box-sizing: border-box;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pack-header-tcg {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.15);
+  margin-top: 10px;
+}
+
+.pack-art-img {
+  width: 140px;
+  height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.8)) saturate(1.1);
+  margin: 15px 0;
+  transition: transform 0.3s ease;
+}
+
+.premium-pack-wrapper:hover .pack-art-img {
+  transform: scale(1.06) rotate(1deg);
+}
+
+.pack-title-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.1;
+  margin: 0;
+}
+.booster-basic .pack-title-text { color: #cd7f32; text-shadow: 0 0 12px rgba(205,127,50,0.25); }
+.booster-premium .pack-title-text { color: #fff; text-shadow: 0 0 12px rgba(255,255,255,0.2); }
+.booster-legendary .pack-title-text { color: #ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.3); }
+
+.pack-bottom-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #a0a0b8;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   3. MAZO DE CARTAS EN 3D (DECK STACK)
+   ========================================================================== */
+
+.tcg-deck-container {
+  position: relative;
+  width: var(--tcg-width);
+  height: var(--tcg-height);
+  margin: 20px auto;
+  perspective: 1500px;
+  transform-style: preserve-3d;
+}
+
+.tcg-deck-stack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: floatStack 4s ease-in-out infinite;
+}
+
+/* Overlapping stacked cards */
+.deck-card-shadow {
+  position: absolute;
+  width: var(--tcg-width);
+  height: var(--tcg-height);
+  border-radius: 14px;
+  background: var(--tcg-back-bg);
+  border: 3px solid #111;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.85);
+  box-sizing: border-box;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+/* Dynamic offsets applied via CSS variables or formulas in JS, fallback here: */
+.deck-card-shadow:nth-child(1) { transform: translate3d(0px, 0px, -15px); opacity: 0.35; }
+.deck-card-shadow:nth-child(2) { transform: translate3d(3px, -3px, -10px); opacity: 0.55; }
+.deck-card-shadow:nth-child(3) { transform: translate3d(6px, -6px, -5px); opacity: 0.8; }
+
+/* ==========================================================================
+   4. LA CARTA TCG (INTERACTIVA, FLIP & TILT)
+   ========================================================================== */
+
+.tcg-flip-card {
+  position: absolute;
+  width: var(--tcg-width);
+  height: var(--tcg-height);
+  perspective: 1200px;
+  cursor: pointer;
+  z-index: 10;
+  transform-style: preserve-3d;
+}
+
+.tcg-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  border-radius: 14px;
+}
+
+.tcg-flip-card.revealed .tcg-card-inner {
+  transform: rotateY(180deg);
+}
+
+.tcg-flip-card.slide-out-anim {
+  animation: cardSlideOut 0.65s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.tcg-flip-card.slide-in-anim {
+  animation: cardSlideIn 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+}
+
+/* Card Faces */
+.tcg-card-back,
+.tcg-card-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+/* 4a. REVERSO PREMIUM DE TCG */
+.tcg-card-back {
+  background: linear-gradient(135deg, #0f0a28 0%, #060412 100%);
+  border: 4px solid var(--tcg-back-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  gap: 12px;
+  z-index: 2;
+  transform: rotateY(0deg); /* Neutral face */
+}
+
+/* Elegant geometric golden border lines inside back face */
+.tcg-card-back::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.tcg-card-back-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.1rem;
+  color: #fff;
+  letter-spacing: 3px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.7);
+  margin: 0;
+}
+
+.tcg-card-back-seal {
+  font-size: 2.5rem;
+  color: #ffd700;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.5));
+}
+
+.tcg-card-back-sub {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+/* 4b. ANVERSO PREMIUM DE TCG */
+.tcg-card-front {
+  background: #0f0a21;
+  transform: rotateY(180deg); /* Flipped initially */
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.tcg-card-front.lqsa-card-item {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border-radius: 14px;
+}
+
+/* Custom rarity designs for front faces */
+.rarity-design-common { border: 4px solid var(--rarity-common); }
+.rarity-design-rare { border: 4px solid var(--rarity-rare); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2), inset 0 0 10px rgba(0,0,0,0.6); }
+.rarity-design-epic { border: 4px solid var(--rarity-epic); animation: epicGlow 4s ease infinite; }
+.rarity-design-legendary { border: 4px solid var(--rarity-legendary); animation: legendaryGlow 3s ease infinite; }
+.rarity-design-foil {
+  border: 4px solid transparent;
+  border-image: linear-gradient(45deg, #f43f5e, #eab308, #3b82f6, #f43f5e) 1;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.6);
+}
+
+/* Holographic dynamic gloss overlays */
+.card-foil-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, rgba(255,255,255,0.03) 70%, rgba(255,255,255,0) 100%);
+  background-size: 250% 250%;
+  background-position: 0% 0%;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tcg-card-front.is-foil .card-foil-overlay,
+.tcg-card-front.is-legendary .card-foil-overlay {
+  background: linear-gradient(115deg, rgba(255, 0, 85, 0.12) 0%, rgba(0, 255, 85, 0.12) 25%, rgba(0, 85, 255, 0.12) 50%, rgba(255, 0, 85, 0.12) 75%, rgba(255,255,255,0.2) 90%, rgba(255, 0, 85, 0.12) 100%);
+  background-size: 300% 300%;
+  mix-blend-mode: color-dodge;
+  animation: holographicShimmer 8s linear infinite;
+}
+
+/* Parallax mouse hover reactive shininess updates on mousemove inside JS */
+.tcg-flip-card.revealed:hover .card-foil-overlay {
+  background-position: var(--foil-x, 50%) var(--foil-y, 50%);
+  transition: background-position 0.1s ease-out;
+}
+
+/* ==========================================================================
+   5. PANTALLA GALERÍA RESUMEN (FINAL EXHIBIT)
+   ========================================================================== */
+
+.tcg-summary-gallery-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  gap: 30px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.tcg-summary-gallery-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  letter-spacing: 3px;
+  color: #ffd700;
+  text-shadow: 0 0 25px rgba(255, 215, 0, 0.35);
+  margin: 0;
+  text-align: center;
+}
+
+.tcg-summary-gallery-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.05rem;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  margin: -15px 0 10px;
+  text-align: center;
+}
+
+.tcg-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  width: 100%;
+  perspective: 1200px;
+  padding: 10px 0;
+}
+
+/* Cards in summary are fixed size TCG cards with interactive tilt! */
+.tcg-summary-grid .tcg-flip-card {
+  position: relative !important;
+  margin: 0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  transition: transform 0.25s ease;
+}
+
+.tcg-summary-grid .tcg-flip-card:hover {
+  transform: scale(1.05) translateY(-5px);
+  z-index: 20;
+}
+
+.tcg-save-collection-btn {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  padding: 12px 45px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(16,185,129,0.35), inset 0 0 10px rgba(255,255,255,0.15);
+  transition: all 0.25s ease;
+  margin-top: 15px;
+}
+
+.tcg-save-collection-btn:hover {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  box-shadow: 0 10px 30px rgba(16,185,129,0.6);
+  transform: scale(1.04) translateY(-2px);
+}
+
+.tcg-save-collection-btn:active {
+  transform: scale(0.98) translateY(0);
+}
+
+/* Responsive Mobile constraints for gacha envelopes and stacks */
+@media (max-width: 540px) {
+  :root {
+    --tcg-width: 190px;
+    --tcg-height: 266px;
+  }
+  
+  .premium-pack-wrapper {
+    width: 190px;
+    height: 285px;
+  }
+  
+  .pack-art-img {
+    width: 100px;
+    height: 140px;
+  }
+  
+  .pack-title-text {
+    font-size: 1.4rem;
+  }
+  
+  .tcg-summary-gallery-title {
+    font-size: 2.1rem;
+  }
+  
+  .tcg-summary-grid {
+    gap: 12px;
+  }
+  
+  .tcg-save-collection-btn {
+    padding: 10px 30px;
+    font-size: 1.15rem;
+  }
+}
