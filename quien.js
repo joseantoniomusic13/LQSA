@@ -1676,7 +1676,7 @@ function confirmAbandonGame() {
 }
 
 // ── Helpers Globales para Recompensas de Victoria y Salida del Juego ──
-window.exitCurrentGame = function() {
+window.exitCurrentGame = function () {
   window._bypassAbandonWarning = true; // Evitar disparar el modal de advertencia al salir voluntariamente al terminar
 
   // 1. Si es modo Duelo
@@ -1700,14 +1700,19 @@ window.exitCurrentGame = function() {
   }
 };
 
-window.showVictoryRewardModal = function() {
+window.showVictoryRewardModal = function () {
+  const uid = localStorage.getItem('lqsa_user');
+  if (uid && typeof firebase !== 'undefined') {
+    firebase.database().ref(`users/${uid}/coins`).transaction(coins => (coins || 0) + 50);
+  }
+
   const existing = document.getElementById("lqsa-victory-modal");
   if (existing) existing.remove();
 
   const overlay = document.createElement("div");
   overlay.id = "lqsa-victory-modal";
   overlay.className = "auth-overlay";
-  overlay.style.zIndex = "21000"; 
+  overlay.style.zIndex = "21000";
   overlay.style.background = "rgba(8, 4, 18, 0.9)";
   overlay.style.backdropFilter = "blur(10px)";
   overlay.style.display = "flex";

@@ -1349,5 +1349,21 @@ const ALL_CHARACTERS = [
         temporadaAparicion: 7,
         frase: ["Espera, espera que me voy a quitar la dentadura..."],
         emoji: "",
+    },
+    {
+        nombre: "Victoria Rafaela",
+        tipo: "Principal",
+        apodo: "Marquesa",
+        genero: ["Femenino"],
+        hijos: 0,
+        origen: "España",
+        piso_montepinar: ["No aparece"],
+        piso_contubernio: ["1º Ext. Izq.", "3º Ext. Der."],
+        ocupacion: ["Marqués"],
+        presidente: false,
+        temporadaAparicion: 13,
+        frase: ["El dinero no es ningún problema para mí."],
+        emoji: "👵👑💵",
     }
 ];
+

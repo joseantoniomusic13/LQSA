@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    LQSACatena — Modo Duelo Online (hasta 8 jugadores)
    Firebase: /duel_rooms/{code}/
      phase: 'waiting' | 'playing' | 'finished'

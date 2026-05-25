@@ -1295,7 +1295,8 @@
       <a href="#" class="nav-btn" onclick="openAlbumUI(); return false;">📘 Álbum</a>
       <a href="#" class="nav-btn" onclick="openMissionsUI(false); return false;">📅 Misiones</a>
     </nav>
-    <div class="coin-panel" onclick="openAlbumUI()" style="cursor:pointer; display:inline-flex; align-items:center; background:rgba(240,192,32,0.15); border:1px solid var(--accent); padding:4px 10px; border-radius:20px; font-family:'Barlow Condensed',sans-serif; font-weight:bold; color:#fff; gap:5px;">
+    <div class="coin-panel" onclick="openAlbumUI()"
+      style="cursor:pointer; display:inline-flex; align-items:center; background:rgba(240,192,32,0.15); border:1px solid var(--accent); padding:4px 10px; border-radius:20px; font-family:'Barlow Condensed',sans-serif; font-weight:bold; color:#fff; gap:5px;">
       🪙 <span id="global-coin-count">0</span>
     </div>
     <span class="auth-nav-item"></span>
@@ -1305,25 +1306,31 @@
   <div id="quien-mode-overlay" class="quien-mode-overlay" style="display:none">
     <div class="quien-mode-box">
       <button class="lobby-back" onclick="hideModeOverlay()" style="align-self:flex-start">← Volver</button>
-      
+
       <!-- Banner de reconexión online -->
-      <div id="online-reconnect-banner" style="display: none; background: rgba(240, 192, 32, 0.15); border: 1px solid rgba(240, 192, 32, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
+      <div id="online-reconnect-banner"
+        style="display: none; background: rgba(240, 192, 32, 0.15); border: 1px solid rgba(240, 192, 32, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #fef08a;">
           <span style="font-size:1.2rem">🎮</span>
-          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida online activa.</span>
+          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida online
+            activa.</span>
         </div>
-        <button onclick="reconnectActiveOnlineGame()" class="q-btn" style="padding: 6px 14px; font-size: 0.82rem; background: var(--accent); color: #000; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
+        <button onclick="reconnectActiveOnlineGame()" class="q-btn"
+          style="padding: 6px 14px; font-size: 0.82rem; background: var(--accent); color: #000; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
           ⚡ Reconectar
         </button>
       </div>
 
       <!-- Banner de reconexión duelo -->
-      <div id="duel-reconnect-banner" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
+      <div id="duel-reconnect-banner"
+        style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 12px 16px; margin: 15px 0; width: 100%; align-items: center; justify-content: space-between; box-sizing: border-box; flex-direction: row; gap: 10px; animation: popIn 0.3s ease;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #fca5a5;">
           <span style="font-size:1.2rem">⚔️</span>
-          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida de duelo activa.</span>
+          <span style="font-family:'Barlow Condensed',sans-serif; letter-spacing: 0.5px;">Tienes una partida de duelo
+            activa.</span>
         </div>
-        <button onclick="reconnectActiveDuelGame()" class="q-btn" style="padding: 6px 14px; font-size: 0.82rem; background: #ef4444; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
+        <button onclick="reconnectActiveDuelGame()" class="q-btn"
+          style="padding: 6px 14px; font-size: 0.82rem; background: #ef4444; color: #fff; border: none; font-weight: bold; cursor: pointer; border-radius: 6px;">
           ⚡ Reconectar
         </button>
       </div>
@@ -1569,18 +1576,19 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  <script src="firebase-config.js"></script>
-  <script src="auth.js?v=13"></script>
-  <script src="characters.js"></script>
-  <script src="albumData.js"></script>
-  <script src="album.js"></script>
-  <script src="trades.js"></script>
+  <script charset="utf-8" src="firebase-config.js"></script>
+  <script charset="utf-8" src="auth.js?v=13"></script>
+  <script charset="utf-8" src="characters.js"></script>
+  <script charset="utf-8" src="albumData.js"></script>
+  <script charset="utf-8" src="album.js"></script>
+  <script charset="utf-8" src="quien-tcg-modes.js"></script>
+  <script charset="utf-8" src="trades.js"></script>
 
-  <script src="quien.js"></script>
-  <script src="utils.js"></script>
-  <script src="friends.js"></script>
-  <script src="quien-online.js"></script>
-  <script src="quien-duelo.js"></script>
+  <script charset="utf-8" src="quien.js"></script>
+  <script charset="utf-8" src="utils.js"></script>
+  <script charset="utf-8" src="friends.js"></script>
+  <script charset="utf-8" src="quien-online.js"></script>
+  <script charset="utf-8" src="quien-duelo.js"></script>
   <script>
     // Sobrescribir showTutorial globalmente para que llame a la función interna de quien.js
     function showTutorial() {

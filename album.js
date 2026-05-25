@@ -5,6 +5,31 @@
 let userAlbumData = { coins: 0, cards: {}, missions: {} };
 
 // ==========================================================================
+//  COMPOSITE CARD KEYS UTILITIES
+// ==========================================================================
+window.parseCardKey = function (key) {
+  if (!key) return { baseId: "", isFoil: false, signed: false, level: 1 };
+  const parts = key.split("_");
+  const baseId = parts[0];
+  const isFoil = key.includes("_foil");
+  const signed = key.includes("_signed");
+
+  let level = 1;
+  const lvlMatch = key.match(/_lvl(\d+)/);
+  if (lvlMatch) level = parseInt(lvlMatch[1]);
+
+  return { baseId, isFoil, signed, level };
+}
+
+window.getCardKey = function (baseId, isFoil, level, signed) {
+  let key = baseId;
+  if (isFoil) key += "_foil";
+  if (signed) key += "_signed";
+  if (level && level > 1) key += `_lvl${level}`;
+  return key;
+}
+
+// ==========================================================================
 //  TCG DUEL PREPARATION: RECETAS DE DÚOS Y ATRIBUTOS DE COMBATE
 // ==========================================================================
 
@@ -88,6 +113,46 @@ const DUO_RECIPES = [
       { name: "Equilibrio Energético", power: 80, desc: "Limpia todos los estados negativos de tu tablero." },
       { name: "Normativa Municipal", power: 150, desc: "Impone una derrama masiva de daño grupal." }
     ]
+  },
+  {
+    id: "duo-salami-capitan",
+    name: "Papá Noel y Capitán Salami",
+    ingredients: ["amador-rivas", "javier-maroto"],
+    coinsCost: 250,
+    number: "D05",
+    occupation: "Héroes del Engaño",
+    season: "T3-T11",
+    type: "Dúo Épico",
+    quote: "¡Merengue, merengue! ¿Un pinchito obligatorio, cieluchi?",
+    image: "img/personajes/amador-rivas.webp",
+    hp: 490,
+    atk: 210,
+    def: 155,
+    combatType: "Dúo León + Buscavidas",
+    attacks: [
+      { name: "Salami Mandayo", power: 120, desc: "Embestida arrolladora que reduce las defensas del oponente." },
+      { name: "Combo del Merengue", power: 195, desc: "Golpe de gracia conjunto usando disfraces festivos." }
+    ]
+  },
+  {
+    id: "duo-cojin-mente-fria",
+    name: "El Sofá Henry (Mente Cojín)",
+    ingredients: ["vicente-maroto", "maxi-angulo"],
+    coinsCost: 250,
+    number: "D06",
+    occupation: "Filósofos del Bar",
+    season: "T1-T7",
+    type: "Dúo Épico",
+    quote: "Eehh, ¡caña aquí! Vicente, ¡mente fría que la lías!",
+    image: "img/personajes/vicente-maroto.webp",
+    hp: 530,
+    atk: 155,
+    def: 210,
+    combatType: "Dúo Junta + León",
+    attacks: [
+      { name: "Hombre Cojín Defensivo", power: 75, desc: "Se atrinchera en el sofá absorbiendo el daño del siguiente turno." },
+      { name: "Derrama del Mente Fría", power: 180, desc: "Ataque táctico ordenando una ronda de cañas pesadas." }
+    ]
   }
 ];
 
@@ -166,36 +231,161 @@ function enhanceCardsWithCombatStats() {
       ];
     }
 
-    // Sobrescribir ataques específicos para personajes icónicos
-    if (card.name.includes("Recio")) {
+    // Sobrescribir clase, stats y ataques específicos para personajes icónicos
+    const n = card.name.toUpperCase();
+    if (n.includes("RECIO") && !n.includes("JR")) {
+      combatType = "Mayorista";
+      baseHp = 230; baseAtk = 95; baseDef = 80;
       attacks = [
         { name: "Lanzamiento de Centollo", power: 65, desc: "Lanza un bogavante fresco directo a la cara." },
         { name: "¡Mayorista, no limpio pescado!", power: 90, desc: "Ataque fulminante con un pez espada congelado." }
       ];
-    } else if (card.name.includes("Amador") || card.name.includes("Rivas")) {
+    } else if (n.includes("BERTA")) {
+      combatType = "Mayorista";
+      baseHp = 190; baseAtk = 65; baseDef = 85;
+      attacks = [
+        { name: "Sentencia Divina", power: 55, desc: "Rayo del altísimo directo al pecador rival." },
+        { name: "Milagro en el Invernadero", power: 75, desc: "Sanación milagrosa que desconcierta al enemigo." }
+      ];
+    } else if (n.includes("AMADOR") || (n.includes("RIVAS") && !n.includes("JR") && !n.includes("CARLOTA"))) {
+      combatType = "León";
+      baseHp = 210; baseAtk = 90; baseDef = 75;
       attacks = [
         { name: "¡Pinchito Obligatorio!", power: 60, desc: "Seducción arrolladora que paraliza al rival." },
         { name: "¡Espartaco!", power: 85, desc: "Se quita la camiseta y embiste como el guerrero de Albacete." }
       ];
-    } else if (card.name.includes("Fermín") || card.name.includes("Trujillo")) {
+    } else if (n.includes("TEODORO")) {
+      combatType = "León";
+      baseHp = 195; baseAtk = 82; baseDef = 72;
+      attacks = [
+        { name: "Dj Theo Beats", power: 55, desc: "Música atronadora del mandril de Albacete." },
+        { name: "Mandoble de Mandril", power: 80, desc: "Golpe contundente con ambas palmas." }
+      ];
+    } else if (n.includes("MAITE") || n.includes("CUQUI")) {
+      combatType = "Inquilino";
+      baseHp = 190; baseAtk = 80; baseDef = 70;
+      attacks = [
+        { name: "Hachazo de la Cuqui", power: 60, desc: "Golpe demoledor de hacha digno de una diva." },
+        { name: "¡Ay, mis hijos!", power: 80, desc: "Grito histerico que aturde al rival." }
+      ];
+    } else if (n.includes("LEO ") || n.includes(" LEO") || n.includes("LEO ROMANÍ")) {
+      combatType = "León";
+      baseHp = 180; baseAtk = 75; baseDef = 70;
+      attacks = [
+        { name: "Pesado de Montepinar", power: 50, desc: "Aburre al rival hablándole de ligues inexistentes." },
+        { name: "El Mente Fría", power: 75, desc: "Plan infalible de soltero para salir de fiesta." }
+      ];
+    } else if (n.includes("JAVIER MAROTO") || n.includes("MAROTO") || n.includes("JAVI")) {
+      combatType = "Inquilino";
+      baseHp = 200; baseAtk = 70; baseDef = 85;
+      attacks = [
+        { name: "Salami Mandayo", power: 55, desc: "Un embutido volador directo al rostro." },
+        { name: "Estrés de Piloto", power: 78, desc: "Nervios de acero que impactan la cordura rival." }
+      ];
+    } else if (n.includes("LOLA") || n.includes("TRUJILLO") && !n.includes("FERMÍN")) {
+      combatType = "Inquilino";
+      baseHp = 185; baseAtk = 75; baseDef = 65;
+      attacks = [
+        { name: "Grito de Actriz", power: 50, desc: "Grito dramático digno de culebrón venezolano." },
+        { name: "Chupito Nelson", power: 78, desc: "Cóctel explosivo que deja mareado al oponente." }
+      ];
+    } else if (n.includes("VICENTE")) {
+      combatType = "Junta";
+      baseHp = 240; baseAtk = 55; baseDef = 90;
+      attacks = [
+        { name: "Hombre Cojín", power: 45, desc: "Inmune al daño gracias a su mimetismo de sofá." },
+        { name: "Mando de la Tele", power: 82, desc: "Cambia de canal provocando un cortocircuito psíquico." }
+      ];
+    } else if (n.includes("GREGORIA") || n.includes("GOYA")) {
+      combatType = "Junta";
+      baseHp = 205; baseAtk = 85; baseDef = 60;
+      attacks = [
+        { name: "Croqueta Explosiva", power: 65, desc: "Lanza croquetas calientes cargadas de desquicie." },
+        { name: "Limpieza Extrema", power: 82, desc: "Escobazo letal para desalojar intrusos." }
+      ];
+    } else if (n.includes("ESTELA") || n.includes("REYNOLDS")) {
+      combatType = "Buscavidas";
+      baseHp = 175; baseAtk = 95; baseDef = 50;
+      attacks = [
+        { name: "Lanzamiento de Whisky", power: 60, desc: "Lanza un vaso de tubo con hielo." },
+        { name: "¡Fernando Esteso me chupó un pezón!", power: 95, desc: "Ataque sónico insoportable que confunde al oponente." }
+      ];
+    } else if (n.includes("FERMÍN")) {
+      combatType = "Buscavidas";
+      baseHp = 200; baseAtk = 85; baseDef = 65;
       attacks = [
         { name: "Estafa del Espárrago", power: 55, desc: "Un timo inmobiliario que reduce la defensa enemiga." },
         { name: "¡Doble Nelson!", power: 80, desc: "Su llave de lucha libre favorita." }
       ];
-    } else if (card.name.includes("Coque")) {
+    } else if (n.includes("COQUE")) {
+      combatType = "Buscavidas";
+      baseHp = 220; baseAtk = 65; baseDef = 75;
       attacks = [
         { name: "Riego de Plantas", power: 40, desc: "Moja al rival con agua sucia de regar." },
-        { name: "Plantación de Hierba", power: 75, desc: "Dormir al rival con humo denso del invernadero." }
+        { name: "Plantación de Hierba", power: 78, desc: "Dormir al rival con humo denso del invernadero." }
       ];
-    } else if (card.name.includes("Enrique") || card.name.includes("Pastor")) {
+    } else if (n.includes("MAXI") || n.includes("MENTE FRÍA")) {
+      combatType = "Buscavidas";
+      baseHp = 190; baseAtk = 70; baseDef = 80;
+      attacks = [
+        { name: "Mente Fría", power: 50, desc: "Un plan estratégico e infalible formulado en el bar." },
+        { name: "Consejo de Sabio", power: 75, desc: "Chapa filosófica existencial que agota mentalmente." }
+      ];
+    } else if (n.includes("ENRIQUE") || n.includes("PASTOR") && !n.includes("JULIÁN")) {
+      combatType = "Junta";
+      baseHp = 215; baseAtk = 70; baseDef = 85;
       attacks = [
         { name: "Lectura de Estatutos", power: 45, desc: "Duerme de aburrimiento al contrincante." },
-        { name: "Doble Cuchufleta", power: 75, desc: "Llama a Araceli para pedir auxilio matrimonial." }
+        { name: "Doble Cuchufleta", power: 75, desc: "Ataque diplomático pacificador cargado de cordura." }
       ];
-    } else if (card.name.includes("Estela") || card.name.includes("Reynolds")) {
+    } else if (n.includes("ARACELI")) {
+      combatType = "Junta";
+      baseHp = 190; baseAtk = 80; baseDef = 75;
       attacks = [
-        { name: "Lanzamiento de Whisky", power: 60, desc: "Lanza un vaso de tubo con hielo." },
-        { name: "¡Fernando Esteso me chupó un pezón!", power: 95, desc: "Ataque sónico insoportable que confunde al oponente." }
+        { name: "Chakra Místico", power: 55, desc: "Alineación cósmica que debilita el espíritu enemigo." },
+        { name: "Vuelo del Fénix", power: 80, desc: "Ataque acrobático místico de evasión mental." }
+      ];
+    } else if (n.includes("JUDITH")) {
+      combatType = "Junta";
+      baseHp = 180; baseAtk = 85; baseDef = 65;
+      attacks = [
+        { name: "Terapia Psicótica", power: 60, desc: "Ataque psicológico destructivo de diván." },
+        { name: "¡A comer perdices!", power: 82, desc: "Confunde al rival con ilusiones matrimoniales." }
+      ];
+    } else if (n.includes("JULIÁN")) {
+      combatType = "Junta";
+      baseHp = 170; baseAtk = 75; baseDef = 75;
+      attacks = [
+        { name: "Dentellada de Jubilado", power: 50, desc: "Mordisco rápido de anciano irascible." },
+        { name: "Chapa de Abuelo", power: 72, desc: "Anécdota infinita sobre Franco o la posguerra." }
+      ];
+    } else if (n.includes("FINA")) {
+      combatType = "Junta";
+      baseHp = 185; baseAtk = 92; baseDef = 70;
+      attacks = [
+        { name: "Insulto Gratuito", power: 65, desc: "Lanza pullas insoportables que dañan el honor." },
+        { name: "Guerra de Basura", power: 88, desc: "Lanza bolsas de basura orgánica pestilente." }
+      ];
+    } else if (n.includes("CHUSA")) {
+      combatType = "Buscavidas";
+      baseHp = 195; baseAtk = 88; baseDef = 60;
+      attacks = [
+        { name: "Ataque con Jeringuilla", power: 60, desc: "Amenaza de jeringuilla de toxicómana reformada." },
+        { name: "Chusa la Limpiadora", power: 84, desc: "Friegue salvaje que arrolla al contrincante." }
+      ];
+    } else if (n.includes("BRUNO")) {
+      combatType = "Inquilino";
+      baseHp = 200; baseAtk = 75; baseDef = 80;
+      attacks = [
+        { name: "Melodía Depresiva", power: 50, desc: "Toca el piano melancólico provocando llanto rival." },
+        { name: "Terapia de Diván", power: 76, desc: "Chapa de psicoanálisis que duerme al contrincante." }
+      ];
+    } else if (n.includes("VICTORIA") || n.includes("RAFAELA")) {
+      combatType = "Mayorista";
+      baseHp = 230; baseAtk = 85; baseDef = 90;
+      attacks = [
+        { name: "El dinero no es problema", power: 62, desc: "Arroja fajos de billetes que abofetean al enemigo." },
+        { name: "Desprecio Nobiliario", power: 85, desc: "Humillación aristocrática fulminante." }
       ];
     }
 
@@ -210,22 +400,22 @@ function enhanceCardsWithCombatStats() {
   DUO_RECIPES.forEach(recipe => {
     const ing1Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[0]);
     const ing2Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[1]);
-    
+
     let mixedCombatType = recipe.combatType;
     let mixedAttacks = recipe.attacks;
-    
+
     if (ing1Card && ing2Card) {
       mixedCombatType = `${ing1Card.combatType} + ${ing2Card.combatType}`;
       mixedAttacks = [
-        { 
-          name: ing1Card.attacks[0].name, 
-          power: Math.round(ing1Card.attacks[0].power * 1.5), 
-          desc: `Técnica combinada de ${ing1Card.name}.` 
+        {
+          name: ing1Card.attacks[0].name,
+          power: Math.round(ing1Card.attacks[0].power * 1.5),
+          desc: `Técnica combinada de ${ing1Card.name}.`
         },
-        { 
-          name: ing2Card.attacks[0].name, 
-          power: Math.round(ing2Card.attacks[0].power * 1.5), 
-          desc: `Técnica combinada de ${ing2Card.name}.` 
+        {
+          name: ing2Card.attacks[0].name,
+          power: Math.round(ing2Card.attacks[0].power * 1.5),
+          desc: `Técnica combinada de ${ing2Card.name}.`
         }
       ];
     }
@@ -332,7 +522,33 @@ function initAlbumSystem(uid) {
     if (!snap.exists()) return;
     const profile = snap.val();
     userAlbumData.coins = profile.coins || 0;
-    userAlbumData.cards = (profile.album && profile.album.cards) || {};
+    const rawCards = (profile.album && profile.album.cards) || {};
+    const migratedCards = {};
+    Object.keys(rawCards).forEach(key => {
+      const uCard = rawCards[key];
+      if (!uCard) return;
+
+      const hasFoilSuffix = key.includes("_foil");
+      const hasSignedSuffix = key.includes("_signed");
+      const hasLvlSuffix = key.includes("_lvl");
+
+      if (hasFoilSuffix || hasSignedSuffix || hasLvlSuffix) {
+        migratedCards[key] = uCard;
+      } else {
+        const isFoil = !!uCard.foil;
+        const signed = !!uCard.signed;
+        const level = uCard.level || 1;
+        const newKey = getCardKey(key, isFoil, level, signed);
+        migratedCards[newKey] = {
+          count: uCard.count || 1,
+          foil: isFoil,
+          level: level,
+          signed: signed,
+          obtainedAt: uCard.obtainedAt || Date.now()
+        };
+      }
+    });
+    userAlbumData.cards = migratedCards;
 
     // Actualizar widgets de monedas en la UI si existen
     const coinDisplay = document.getElementById("global-coin-count");
@@ -423,17 +639,24 @@ async function buyPack(packId) {
 
     // Guardar cartas en el perfil del usuario
     for (let pulled of pulledCards) {
-      let cardKey = pulled.id;
-      let isFoil = pulled.isFoil;
+      let cardKey = pulled.id + (pulled.isFoil ? "_foil" : "");
       let userCardRef = userRef.child(`album/cards/${cardKey}`);
 
       await userCardRef.transaction(current => {
         if (!current) {
-          return { count: 1, foil: isFoil, obtainedAt: firebase.database.ServerValue.TIMESTAMP };
+          return {
+            count: 1,
+            foil: pulled.isFoil,
+            level: 1,
+            signed: false,
+            obtainedAt: firebase.database.ServerValue.TIMESTAMP
+          };
         } else {
           return {
             count: (current.count || 0) + 1,
-            foil: current.foil || isFoil,
+            foil: current.foil || pulled.isFoil,
+            level: current.level || 1,
+            signed: !!current.signed,
             obtainedAt: current.obtainedAt || firebase.database.ServerValue.TIMESTAMP
           };
         }
@@ -486,33 +709,58 @@ function rollRandomCard(guaranteeRarityId = null) {
 //  SISTEMA DE FUSIONES (Evolución)
 // ══════════════════════════════════════
 
-async function fuseCards(cardId) {
+async function fuseCards(cardKey) {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) return;
 
-  const currentCount = (userAlbumData.cards[cardId] && userAlbumData.cards[cardId].count) || 0;
+  const currentCount = (userAlbumData.cards[cardKey] && userAlbumData.cards[cardKey].count) || 0;
   if (currentCount < 3) {
-    if (window.showLqsaAlert) showLqsaAlert("Necesitas al menos 3 copias idénticas de la carta para realizar una fusión.", "FUSIÓN IMPOSIBLE", "error");
-    else alert("Necesitas al menos 3 copias idénticas de la carta para realizar una fusión.");
+    if (window.showLqsaAlert) showLqsaAlert("Necesitas al menos 3 copias idénticas de esta versión para realizar una fusión.", "FUSIÓN IMPOSIBLE", "error");
     return;
   }
 
-  const db = firebase.database();
-  const cardRef = db.ref(`users/${uid}/album/cards/${cardId}`);
+  // Extract base card ID and other properties
+  const parts = cardKey.split("_");
+  const baseId = parts[0];
+  const signed = cardKey.includes("_signed");
 
-  await cardRef.transaction(current => {
-    if (current && current.count >= 3) {
-      return {
-        count: current.count - 2, // Consumimos 3 y devolvemos 1 evolucionada
-        foil: true, // Se transforma en versión holográfica/Foil permanentemente
-        obtainedAt: firebase.database.ServerValue.TIMESTAMP
-      };
+  let currentLvl = 1;
+  const lvlMatch = cardKey.match(/_lvl(\d+)/);
+  if (lvlMatch) currentLvl = parseInt(lvlMatch[1]);
+
+  // Construct foil key
+  const foilKey = getCardKey(baseId, true, currentLvl, signed);
+
+  const db = firebase.database();
+  const cardsRef = db.ref(`users/${uid}/album/cards`);
+
+  await cardsRef.transaction(currentCards => {
+    if (!currentCards) return currentCards;
+
+    if (currentCards[cardKey] && currentCards[cardKey].count >= 3) {
+      // Decrement source
+      currentCards[cardKey].count -= 3;
+      if (currentCards[cardKey].count <= 0) {
+        delete currentCards[cardKey];
+      }
+
+      // Add to foil Key
+      if (!currentCards[foilKey]) {
+        currentCards[foilKey] = {
+          count: 1,
+          foil: true,
+          level: currentLvl,
+          signed: signed,
+          obtainedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+      } else {
+        currentCards[foilKey].count = (currentCards[foilKey].count || 0) + 1;
+      }
     }
-    return current;
+    return currentCards;
   });
 
   if (window.showLqsaAlert) showLqsaAlert("Tu cromo ha evolucionado permanentemente a su versión Holográfica/Foil con destellos arcoíris 🌈", "¡EVOLUCIÓN COMPLETA! 🎉", "success");
-  else alert("¡Fusión completada con éxito! Tu carta ha evolucionado a su versión Holográfica 🌈");
 
   openAlbumUI();
 }
@@ -754,11 +1002,18 @@ function renderPocketHtml(cardIndex) {
   }
 
   const card = filteredCards[cardIndex];
-  const userCard = userAlbumData.cards[card.id];
-  const owned = !!userCard;
-  const count = owned ? userCard.count : 0;
-  const isFoil = owned ? userCard.foil : false;
-  const borderCol = isFoil ? CARD_RARITIES.FOIL.color : card.baseRarity.color;
+
+  const ownedVersions = Object.keys(userAlbumData.cards).filter(key => {
+    return key === card.id || key.startsWith(card.id + "_");
+  }).map(key => {
+    return {
+      key: key,
+      ...userAlbumData.cards[key],
+      ...parseCardKey(key)
+    };
+  });
+
+  const owned = ownedVersions.length > 0;
 
   if (!owned) {
     // Pocket Empty (Locked card)
@@ -777,15 +1032,70 @@ function renderPocketHtml(cardIndex) {
         `;
   }
 
+  // Sort versions consistently: Signed Foil > Foil > Signed Normal > Normal. Then level desc.
+  ownedVersions.sort((a, b) => {
+    const scoreA = (a.signed ? 100 : 0) + (a.foil ? 50 : 0) + a.level;
+    const scoreB = (b.signed ? 100 : 0) + (b.foil ? 50 : 0) + b.level;
+    return scoreB - scoreA;
+  });
+
+  // Cycle tracking
+  window._pocketActiveKeys = window._pocketActiveKeys || {};
+  let activeKey = window._pocketActiveKeys[card.id];
+  let activeVersion = ownedVersions.find(v => v.key === activeKey);
+  if (!activeVersion) {
+    activeVersion = ownedVersions[0];
+    window._pocketActiveKeys[card.id] = activeVersion.key;
+  }
+
+  const isFoil = activeVersion.foil;
+  const signed = activeVersion.signed;
+  const level = activeVersion.level;
+  const totalCount = ownedVersions.reduce((sum, v) => sum + (v.count || 0), 0);
+  const borderCol = isFoil ? CARD_RARITIES.FOIL.color : card.baseRarity.color;
+
   // Pocket Filled (Owned card)
   let rarityName = card.baseRarity.name;
   if (isFoil) rarityName = "🌈 FOIL";
+  if (signed) rarityName += " ✒️";
+
+  // Dynamic overlays inside the binder sleeve
+  const starsBadgeHtml = level > 1 ? `
+    <div class="pocket-stars-badge" style="position: absolute; top: 32px; left: 8px; background: rgba(0, 0, 0, 0.75); color: #ffd700; font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(255, 215, 0, 0.4); z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+      ★ ${level}
+    </div>
+  ` : '';
+
+  const signatureBadgeHtml = signed ? `
+    <div class="pocket-signed-badge" style="position: absolute; top: 32px; right: 8px; background: rgba(168, 85, 247, 0.9); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 0.55rem; font-weight: 700; padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.5); z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+      ✒️ FIRMA
+    </div>
+  ` : '';
+
+  const signatureOverlayHtml = signed ? `
+    <div style="position: absolute; bottom: 44%; left: 10px; z-index: 5; opacity: 0.65; transform: rotate(-8deg); scale: 0.75; transform-origin: left bottom; pointer-events: none;">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; color: #ffd700; font-weight: bold; border-bottom: 1.5px dashed rgba(250,204,21,0.6); padding-bottom: 1px; letter-spacing:0.5px;">✒️ ${card.name.split(' ')[0]}</span>
+    </div>
+  ` : '';
+
+  const navigatorHtml = ownedVersions.length > 1 ? `
+    <div class="pocket-variants-nav" onclick="event.stopPropagation();" style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(10, 6, 26, 0.95); border: 1px solid rgba(240, 192, 32, 0.4); border-radius: 20px; display: flex; align-items: center; justify-content: space-between; padding: 3px 8px; gap: 4px; z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.5); width: 85%; box-sizing: border-box;">
+      <button onclick="window.cyclePocketVariant('${card.id}', -1)" style="background: none; border: none; color: #ffd700; cursor: pointer; font-size: 0.7rem; padding: 0 3px; transition: scale 0.15s; font-weight: bold; outline: none;" onmouseover="this.style.scale='1.25'" onmouseout="this.style.scale='1'">◀</button>
+      <span style="font-size: 0.55rem; color: #cbd5e1; font-family: 'Barlow Condensed', sans-serif; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: center; text-transform: uppercase; letter-spacing: 0.3px;">
+        ${isFoil ? '🌈' : '⚪'} ${signed ? '✒️' : ''} LVL ${level}
+      </span>
+      <button onclick="window.cyclePocketVariant('${card.id}', 1)" style="background: none; border: none; color: #ffd700; cursor: pointer; font-size: 0.7rem; padding: 0 3px; transition: scale 0.15s; font-weight: bold; outline: none;" onmouseover="this.style.scale='1.25'" onmouseout="this.style.scale='1'">▶</button>
+    </div>
+  ` : '';
 
   return `
-        <div class="album-pocket pocket-filled ${isFoil ? 'card-foil' : ''}" data-id="${card.id}" style="--rarity-color: ${borderCol}; cursor: pointer;" onclick="zoomCard('${card.id}', ${isFoil})">
+        <div class="album-pocket pocket-filled ${isFoil ? 'card-foil' : ''}" data-id="${card.id}" style="--rarity-color: ${borderCol}; cursor: pointer;" onclick="zoomCard('${card.id}', '${activeVersion.key}')">
             <div class="pocket-glare"></div>
             <div class="tcg-card" style="border: 2px solid ${borderCol};">
                 <div class="card-rarity-badge" style="background: ${isFoil ? 'linear-gradient(45deg, #f43f5e, #3b82f6, #10b981)' : card.baseRarity.color}; color: ${isFoil ? '#fff' : '#000'};">${rarityName}</div>
+                ${starsBadgeHtml}
+                ${signatureBadgeHtml}
+                ${signatureOverlayHtml}
                 ${getCardImageHtml(card, "48%")}
                 <div class="card-info-box">
                     <div class="card-name">${card.name}</div>
@@ -793,228 +1103,783 @@ function renderPocketHtml(cardIndex) {
                     <div class="card-meta">${card.season} • ${card.type}</div>
                     <div class="card-quote">"${card.quote}"</div>
                     <div class="card-id-num">#${card.number}/150</div>
-                    ${count > 1 ? `<div class="card-counter">×${count}</div>` : ''}
-                    ${count >= 3 ? `<button class="fuse-btn" onclick="event.stopPropagation(); fuseCards('${card.id}')">🧬 Fusionar (3)</button>` : ''}
+                    ${totalCount > 1 ? `<div class="card-counter">×${totalCount}</div>` : ''}
+                    ${ownedVersions.length > 1 ? `<div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #c084fc; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(192,132,252,0.3); z-index: 5;">📄 ${ownedVersions.length} Vars</div>` : ''}
                 </div>
+                ${navigatorHtml}
             </div>
         </div>
     `;
 }
 
-function zoomCard(cardId, isFoil = false) {
+window.cyclePocketVariant = function (cardId, direction) {
   const card = ALBUM_CARDS.find(c => c.id === cardId);
   if (!card) return;
 
-  const userCard = userAlbumData.cards[card.id];
-  const count = userCard ? userCard.count : 0;
-  const rarity = card.baseRarity || CARD_RARITIES.COMMON;
-  const borderCol = isFoil ? CARD_RARITIES.FOIL.color : rarity.color;
-  const rarityName = isFoil ? "🌈 Holográfica Foil" : rarity.name;
-  const rarityClass = isFoil ? "rarity-design-foil" : `rarity-design-${rarity.id}`;
+  const ownedVersions = Object.keys(userAlbumData.cards).filter(key => {
+    return key === cardId || key.startsWith(cardId + "_");
+  }).map(key => {
+    return {
+      key: key,
+      ...userAlbumData.cards[key],
+      ...parseCardKey(key)
+    };
+  });
 
-  // Recuperar nivel y estado de firma del cromo
-  const level = userCard ? (userCard.level || 1) : 1;
-  const signed = userCard ? !!userCard.signed : false;
+  ownedVersions.sort((a, b) => {
+    const scoreA = (a.signed ? 100 : 0) + (a.foil ? 50 : 0) + a.level;
+    const scoreB = (b.signed ? 100 : 0) + (b.foil ? 50 : 0) + b.level;
+    return scoreB - scoreA;
+  });
 
-  // Calcular estadísticas mejoradas de combate
-  let currentHp = card.hp || 100;
-  let currentAtk = card.atk || 40;
-  let currentDef = card.def || 30;
+  window._pocketActiveKeys = window._pocketActiveKeys || {};
+  let currentKey = window._pocketActiveKeys[cardId] || ownedVersions[0].key;
+  let idx = ownedVersions.findIndex(v => v.key === currentKey);
+  if (idx === -1) idx = 0;
 
-  const levelMultiplier = 1 + (level - 1) * 0.15;
-  currentHp = Math.round(currentHp * levelMultiplier);
-  currentAtk = Math.round(currentAtk * levelMultiplier);
-  currentDef = Math.round(currentDef * levelMultiplier);
+  let nextIdx = (idx + direction + ownedVersions.length) % ownedVersions.length;
+  window._pocketActiveKeys[cardId] = ownedVersions[nextIdx].key;
 
-  if (signed) {
-    currentHp = Math.round(currentHp * 1.3);
-    currentAtk = Math.round(currentAtk * 1.3);
-    currentDef = Math.round(currentDef * 1.3);
+  renderAlbumPages();
+};
+
+function zoomCard(cardId, preferredKey = null) {
+  const card = ALBUM_CARDS.find(c => c.id === cardId);
+  if (!card) return;
+
+  // Create modal overlay if it doesn't exist
+  let modal = document.getElementById("zoom-card-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "zoom-card-modal";
+    modal.style.position = "fixed";
+    modal.style.inset = "0";
+    modal.style.zIndex = "10000";
+    modal.style.background = "rgba(4, 3, 10, 0.95)";
+    modal.style.backdropFilter = "blur(18px)";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.style.gap = "40px";
+    modal.style.padding = "30px";
+    modal.style.boxSizing = "border-box";
+    modal.style.animation = "fadeInZoom 0.25s ease-out";
+
+    // Support mobile styling via media query or direct css
+    const styleEl = document.createElement("style");
+    styleEl.innerHTML = `
+      @keyframes fadeInZoom { from { opacity: 0; } to { opacity: 1; } }
+      .zoom-split-layout {
+        display: flex;
+        align-items: center;
+        gap: 50px;
+        max-width: 900px;
+        width: 100%;
+        justify-content: center;
+      }
+     .zoomed-card-container {
+        width: 160px !important;
+        height: 224px !important;
+        min-width: 160px !important;
+        max-width: 160px !important;
+        min-height: 224px !important;
+        max-height: 224px !important;
+        flex-shrink: 0;
+        perspective: 1000px;
+        cursor: pointer;
+        transform-style: preserve-3d;
+        transition: transform 0.2s;
+        overflow: hidden;
+        border-radius: 12px;
+      }
+      .zoomed-card-container .zoomed-card-inner {
+        border-radius: 12px !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.9) !important;
+      }
+      .zoomed-card-container .zoomed-card-front {
+        border-radius: 12px !important;
+      }
+      .zoomed-card-container .card-img {
+        width: 100% !important;
+        height: 90px !important;
+        min-height: 90px !important;
+        max-height: 90px !important;
+        object-fit: cover !important;
+        object-position: top center !important;
+        display: block !important;
+      }
+      .zoomed-card-container .card-img-duo {
+        height: 90px !important;
+        min-height: 90px !important;
+        max-height: 90px !important;
+      }
+      .zoomed-card-container .card-img-duo img {
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: top center !important;
+      }
+      .zoomed-card-container .card-rarity-badge {
+        font-size: 0.5rem !important;
+        padding: 2px 5px !important;
+      }
+      .zoomed-card-container .card-name { font-size: 0.7rem !important; }
+      .zoomed-card-container .card-job { font-size: 0.55rem !important; }
+      .zoomed-card-container .card-quote { display: none !important; }
+      .zoomed-card-container .zoom-stats-box { display: none !important; }
+      .zoomed-card-container .card-info-box {
+        height: auto !important;
+        padding: 5px 7px !important;
+        flex: 1;
+      }
+      .zoomed-card-container .card-desquicie-stars { font-size: 0.5rem !important; }
+      .zoomed-card-container .card-id-num { font-size: 0.5rem !important; }
+      .zoomed-card-container .card-counter {
+        font-size: 0.6rem !important;
+        padding: 1px 4px !important;
+        top: 5px !important;
+        right: 5px !important;
+      }
+      .zoomed-card-container .grid-combat-metrics { display: none !important; }
+      .zoomed-card-container .metric-pill { display: none !important; }
+
+      .zoomed-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        transform: rotateY(0deg);
+        box-shadow: 0 30px 75px rgba(0,0,0,0.9);
+        border-radius: 20px;
+      }
+      .zoomed-card-front {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #0f0a21;
+        box-sizing: border-box;
+        transform: rotateY(0deg);
+        display: flex;
+        flex-direction: column;
+      }
+      .zoomed-card-front.rarity-design-common { border: 6px solid var(--rarity-common); }
+      .zoomed-card-front.rarity-design-rare { border: 6px solid var(--rarity-rare); box-shadow: 0 0 30px rgba(59,130,246,0.3); }
+      .zoomed-card-front.rarity-design-epic { border: 6px solid var(--rarity-epic); animation: epicGlow 4s ease infinite; }
+      .zoomed-card-front.rarity-design-legendary { border: 6px solid var(--rarity-legendary); animation: legendaryGlow 3s ease infinite; }
+      .zoomed-card-front.rarity-design-foil {
+        border: 6px solid transparent;
+        border-image: linear-gradient(45deg, #f43f5e, #eab308, #3b82f6, #f43f5e) 1;
+        box-shadow: 0 0 35px rgba(244,63,94,0.7);
+      }
+     .version-sidebar {
+        width: 420px;
+      background: rgba(10, 6, 26, 0.92) !important; /* Más oscuro y elegante */
+      border: 1px solid rgba(240, 192, 32, 0.3) !important; /* Borde dorado sutil */
+      backdrop-filter: blur(25px) !important; /* Efecto cristal difuminado */
+      box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+      border-radius: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-height: 520px;
+      overflow-y: auto;
+}
+      .version-tabs-container {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        overflow-x: visible !important;
+      }
+      .version-tab-chip {
+        flex: 0 0 auto;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.12);
+        color: #cbd5e1;
+        padding: 10px 18px;
+        border-radius: 30px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        min-width: 110px;
+        justify-content: center;
+      }
+      .version-tab-chip:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      .version-tab-chip.active {
+        color: #fff;
+        background: rgba(168, 85, 247, 0.25);
+        border-color: #c084fc;
+        box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
+      }
+      .version-tab-chip.active.foil {
+        background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(59, 130, 246, 0.2));
+        border-color: #f43f5e;
+        box-shadow: 0 0 18px rgba(244, 63, 94, 0.6);
+      }
+      .version-spec-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      .spec-progress-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .spec-progress-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.76rem;
+        font-weight: bold;
+        font-family: 'Barlow Condensed', sans-serif;
+      }
+      .spec-progress-bar-bg {
+        width: 100%;
+        height: 6px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .spec-progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.3s ease-out;
+      }
+      /* === BOTONES DE ACCIÓN TCG === */
+      .v-btn {
+        font-family: 'Barlow Condensed', sans-serif !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.8px !important;
+        font-size: 0.78rem !important;
+        padding: 10px 14px !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        text-transform: uppercase !important;
+        outline: none !important;
+      }
+      .v-btn-select { background: #374151 !important; color: #e5e7eb !important; border: 2px solid #6b7280 !important; }
+      .v-btn-select:hover { background: #4b5563 !important; }
+
+      /* VERDE ESMERALDA — MAZO */
+      .v-btn-deck {
+        background: linear-gradient(140deg, #047857 0%, #10b981 55%, #059669 100%) !important;
+        color: #fff !important;
+        border: 2px solid #34d399 !important;
+        box-shadow: 0 0 14px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+      }
+      .v-btn-deck:hover:not(:disabled) {
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 0 28px rgba(52,211,153,0.8), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+      }
+      .v-btn-deck.in-deck {
+        background: linear-gradient(140deg, #991b1b 0%, #ef4444 55%, #b91c1c 100%) !important;
+        border: 2px solid #f87171 !important;
+        box-shadow: 0 0 14px rgba(239,68,68,0.5), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+      }
+      .v-btn-deck.in-deck:hover:not(:disabled) {
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 0 28px rgba(248,113,113,0.8) !important;
+      }
+
+      /* NARANJA/ORO — DESQUICIAR */
+      .v-btn-upgrade {
+        background: linear-gradient(140deg, #c2410c 0%, #f97316 40%, #eab308 100%) !important;
+        color: #fff !important;
+        border: 2px solid #fbbf24 !important;
+        box-shadow: 0 0 14px rgba(234,88,12,0.55), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+      }
+      .v-btn-upgrade:hover:not(:disabled) {
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 0 30px rgba(251,191,36,0.85), inset 0 1px 0 rgba(255,255,255,0.35) !important;
+      }
+
+      /* VIOLETA/PÚRPURA — AUTÓGRAFO */
+      .v-btn-sign {
+        background: linear-gradient(140deg, #581c87 0%, #9333ea 50%, #7c3aed 100%) !important;
+        color: #fff !important;
+        border: 2px solid #c084fc !important;
+        box-shadow: 0 0 14px rgba(147,51,234,0.55), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+      }
+      .v-btn-sign:hover:not(:disabled) {
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 0 30px rgba(192,132,252,0.85), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+      }
+
+      /* ROSA/MAGENTA — FUSIÓN FOIL */
+      .v-btn-fuse {
+        background: linear-gradient(140deg, #9d174d 0%, #db2777 40%, #f43f5e 100%) !important;
+        color: #fff !important;
+        border: 2px solid #f472b6 !important;
+        box-shadow: 0 0 14px rgba(219,39,119,0.55), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+      }
+      .v-btn-fuse:hover:not(:disabled) {
+        transform: translateY(-3px) scale(1.03) !important;
+        box-shadow: 0 0 30px rgba(244,114,182,0.85), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+      }
+
+      .v-btn:disabled {
+        opacity: 0.28 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: none !important;
+        filter: grayscale(0.4) !important;
+      }
+
+      @media (max-width: 768px) {
+        .zoom-split-layout {
+          flex-direction: column;
+          gap: 10px;
+          overflow-y: auto;
+          max-height: 95vh;
+          padding: 8px;
+          align-items: center;
+        }
+        .version-sidebar {
+          width: 100% !important;
+          max-height: 400px !important;
+          padding: 12px !important;
+        }
+      }
+    `; // end styleEl.innerHTML
+
+    // Inject into <head> so it survives modal.innerHTML replacements
+    styleEl.id = 'zoom-card-modal-styles';
+    if (!document.getElementById('zoom-card-modal-styles')) {
+      document.head.appendChild(styleEl);
+    }
+
+    // Close on click background
+    modal.onclick = function (e) {
+      if (e.target.id === "zoom-card-modal" || e.target.id === "zoom-close-wrapper") {
+        modal.remove();
+      }
+    };
+
+    document.body.appendChild(modal);
   }
 
-  // Create modal overlay
-  const modal = document.createElement("div");
-  modal.id = "zoom-card-modal";
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.zIndex = "10000";
-  modal.style.background = "rgba(4, 3, 10, 0.94)";
-  modal.style.backdropFilter = "blur(18px)";
-  modal.style.display = "flex";
-  modal.style.flexDirection = "column";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.gap = "24px";
-  modal.style.animation = "fadeInZoom 0.25s ease-out";
+  // Nested function to render layout reactively
+  window.updateZoomCardUI = function (activeKey) {
+    const ownedVersions = Object.keys(userAlbumData.cards).filter(key => {
+      return key === cardId || key.startsWith(cardId + "_");
+    }).map(key => {
+      return {
+        key: key,
+        ...userAlbumData.cards[key],
+        ...parseCardKey(key)
+      };
+    });
 
-  // Close on clicking the backdrop itself
-  modal.onclick = function (e) {
-    if (e.target.id === "zoom-card-modal") {
+    if (ownedVersions.length === 0) {
       modal.remove();
+      openAlbumUI();
+      return;
+    }
+
+    // Default to best version if activeKey doesn't exist
+    let activeVersion = ownedVersions.find(v => v.key === activeKey);
+    if (!activeVersion) {
+      ownedVersions.sort((a, b) => {
+        const scoreA = (a.signed ? 100 : 0) + (a.foil ? 50 : 0) + a.level;
+        const scoreB = (b.signed ? 100 : 0) + (b.foil ? 50 : 0) + b.level;
+        return scoreB - scoreA;
+      });
+      activeVersion = ownedVersions[0];
+    }
+
+    const isFoil = activeVersion.foil;
+    const signed = activeVersion.signed;
+    const level = activeVersion.level;
+    const count = activeVersion.count || 1;
+    const activeKeyReal = activeVersion.key;
+
+    const rarity = card.baseRarity || CARD_RARITIES.COMMON;
+    const borderCol = isFoil ? CARD_RARITIES.FOIL.color : rarity.color;
+    const rarityName = isFoil ? "🌈 Holográfica Foil" : rarity.name;
+    const rarityClass = isFoil ? "rarity-design-foil" : `rarity-design-${rarity.id}`;
+
+    // Stats calculations
+    let currentHp = card.hp || 100;
+    let currentAtk = card.atk || 40;
+    let currentDef = card.def || 30;
+
+    const levelMultiplier = 1 + (level - 1) * 0.15;
+    currentHp = Math.round(currentHp * levelMultiplier);
+    currentAtk = Math.round(currentAtk * levelMultiplier);
+    currentDef = Math.round(currentDef * levelMultiplier);
+
+    if (signed) {
+      currentHp = Math.round(currentHp * 1.3);
+      currentAtk = Math.round(currentAtk * 1.3);
+      currentDef = Math.round(currentDef * 1.3);
+    }
+
+    // Left container: Card Visual
+    // Left container: Card Visual
+    const cardHtml = `
+    <div class="zoomed-card-container" id="zoomed-card-container">
+      <div class="zoomed-card-inner" id="zoomed-card-inner">
+        
+        <div class="zoomed-card-front lqsa-card-item ${rarityClass} ${isFoil ? 'is-foil' : ''} ${rarity.id === 'legendary' ? 'is-legendary' : ''}">
+          <div class="card-foil-overlay"></div>
+          
+          ${signed ? `
+            <div class="card-signature-wrapper">
+              <svg class="signature-scribble" viewBox="0 0 100 30">
+                <path d="M5,15 C25,3 40,28 50,15 C65,2 75,28 95,15" fill="none" stroke="rgba(255, 215, 0, 0.55)" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <div class="signature-text">${card.name.split(' ')[0]}</div>
+            </div>
+          ` : ''}
+
+          <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
+            ${rarityName} ${signed ? '✒️ FIRMADA' : ''}
+          </div>
+          
+          ${getCardImageHtml(card, "48%")}
+          
+          <div class="card-info-box" style="padding: 12px 14px; height: 52%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(10, 6, 26, 0.96); border-top: 1px solid rgba(255, 255, 255, 0.05);">
+            <div style="text-align: left; overflow-y: auto; max-height: 100%; scrollbar-width: thin;">
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                <div class="card-name" style="font-size: 1.4rem; color: #fff; font-family:'Bebas Neue', sans-serif; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%; line-height: 1;">
+                  ${card.name}
+                </div>
+                <div class="card-desquicie-stars" style="color: #facc15; font-size: 0.85rem; letter-spacing: 1px; flex-shrink: 0;">
+                  ${'★'.repeat(level)}${'☆'.repeat(5 - level)}
+                </div>
+              </div>
+              
+              <div class="card-job" style="font-size: 0.8rem; color: #ffd700; font-family:'Barlow Condensed', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">💼 ${card.occupation}</div>
+              
+              <div class="card-quote" style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.3; max-height: 34px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 6px;">
+                "${card.quote}"
+              </div>
+
+              <div class="zoom-stats-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
+                  <span style="color: #94a3b8; font-family: 'Barlow Condensed', sans-serif;">Clase Estratégica:</span>
+                  <strong style="color: #c084fc; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px;">✨ ${card.combatType || 'Vecino'}</strong>
+                </div>
+                
+                <div class="grid-combat-metrics">
+                  <div class="metric-pill" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444;">❤️ HP ${currentHp}</div>
+                  <div class="metric-pill" style="background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308;">⚔️ ATK ${currentAtk}</div>
+                  <div class="metric-pill" style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6;">🛡️ DEF ${currentDef}</div>
+                </div>
+                
+                <div style="font-size: 0.68rem; color: #ffd700; font-weight: bold; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px;">HABILIDAD ESPECIAL TCG:</div>
+                <div style="font-size: 0.65rem; color: #cbd5e1; line-height: 1.25; max-height: 32px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-top: 2px;">
+                  <strong style="color: #fff;">${card.attacks && card.attacks[0] ? card.attacks[0].name : 'Sermón Vecinal'}:</strong> ${card.attacks && card.attacks[0] ? card.attacks[0].desc : 'Chapa comunitaria de derramas.'}
+                </div>
+              </div>
+
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px; margin-top: 4px;">
+              <span style="font-size: 0.7rem; color: #64748b; font-family: 'Barlow Condensed', sans-serif; font-weight: 600;">TEMPORADA: ${card.season}</span>
+              <span class="card-id-num" style="font-size: 0.7rem; color: #94a3b8; font-family: monospace; font-weight: bold;">Nº #${card.number}/150</span>
+            </div>
+          </div>
+          
+          <div class="card-counter" style="position: absolute; top: 12px; right: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; background: rgba(0, 0, 0, 0.75); border: 1px solid var(--border); color: var(--accent); padding: 2px 8px; border-radius: 6px; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+            ×${count}
+          </div>
+        </div>
+
+        <div class="zoomed-card-back" style="background: #090614; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; border: 2px solid rgba(168, 85, 247, 0.2); box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.15); position: absolute; inset: 0; backface-visibility: hidden; transform: rotateY(180deg);">
+          <div style="font-size: 3.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(240, 192, 32, 0.4)); animation: victory-glow 2s infinite alternate ease-in-out;">⚔️</div>
+          <div style="font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: rgba(255, 255, 255, 0.15); letter-spacing: 4px;">LQSACATENA</div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+    // Right container: Sidebar versions list
+    const inDeck = localCardDuelDeck.includes(activeKeyReal);
+
+    // Sort ownedVersions so Normal is first, then Foil, then Signed, ordered by level
+    ownedVersions.sort((a, b) => {
+      if (a.foil !== b.foil) return a.foil ? 1 : -1;
+      if (a.signed !== b.signed) return a.signed ? 1 : -1;
+      return a.level - b.level;
+    });
+
+    const tabsHtml = `
+      <div style="font-size:1rem; color:#c084fc; font-weight:900; letter-spacing:1px; margin-bottom:12px; text-transform:uppercase; text-align:left; font-family:'Barlow Condensed',sans-serif; border-bottom:1px solid rgba(192,132,252,0.2); padding-bottom:8px;">🎴 Seleccionar Variante:</div>
+      <div class="version-tabs-container">
+        ${ownedVersions.map(v => {
+      const isActive = v.key === activeKeyReal;
+      let label = v.foil ? "🌈 Foil" : "⚪ Normal";
+      if (v.signed) label += " ✒️";
+      label += ` (★${v.level})`;
+
+      return `
+            <button class="version-tab-chip ${isActive ? 'active' : ''} ${v.foil ? 'foil' : ''}" onclick="window.updateZoomCardUI('${v.key}')">
+              ${label} <span style="font-size:0.8rem; opacity:0.85; background:rgba(255,255,255,0.12); padding:2px 7px; border-radius:10px; font-weight:900;">×${v.count}</span>
+            </button>
+          `;
+    }).join("")}
+      </div>
+    `;
+
+    // Strategic class colored progress bars (glowing neon custom HSL/RGB colors)
+    let themeColor = "#22c55e"; // Default green for Inquilino/Planta
+    let themeGlow = "0 0 12px rgba(34, 197, 94, 0.8)";
+    const rawClass = card.combatType || "Inquilino";
+    const primaryClass = rawClass.includes(" + ") ? rawClass.split(" + ")[0] : rawClass;
+
+    if (primaryClass === "Mayorista" || primaryClass === "Fuego") {
+      themeColor = "#ef4444"; // Neon Red/Orange
+      themeGlow = "0 0 14px rgba(239, 68, 68, 0.9)";
+    } else if (primaryClass === "León" || primaryClass === "Eléctrico") {
+      themeColor = "#facc15"; // Neon Yellow
+      themeGlow = "0 0 14px rgba(250, 204, 21, 0.9)";
+    } else if (primaryClass === "Junta" || primaryClass === "Psíquico") {
+      themeColor = "#a855f7"; // Neon Purple
+      themeGlow = "0 0 14px rgba(168, 85, 247, 0.9)";
+    } else if (primaryClass === "Buscavidas" || primaryClass === "Agua") {
+      themeColor = "#3b82f6"; // Neon Blue
+      themeGlow = "0 0 14px rgba(59, 130, 246, 0.9)";
+    }
+
+    // Normalization percentages for stats progress meters
+    const hpPct = Math.min(100, Math.round((currentHp / 1000) * 100));
+    const atkPct = Math.min(100, Math.round((currentAtk / 400) * 100));
+    const defPct = Math.min(100, Math.round((currentDef / 300) * 100));
+
+    const sidebarHtml = `
+      <div class="version-sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+          <h3 style="font-family:'Bebas Neue',sans-serif; color:#c084fc; font-size:1.6rem; letter-spacing:1px; margin:0;">VARIANTES DEL PERSONAJE</h3>
+          <span style="font-size:0.8rem; color:#94a3b8; font-weight:bold; font-family:'Barlow Condensed',sans-serif;">Total: ${ownedVersions.length}</span>
+        </div>
+        
+        <!-- Pestañas de Selección -->
+        ${tabsHtml}
+
+        <!-- Panel de Especificaciones Premium -->
+        <div class="version-spec-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:6px;">
+            <span style="font-family:'Barlow Condensed',sans-serif; font-weight:bold; font-size:0.95rem; color:#fff;">
+              ${isFoil ? '🌈 Holográfica Foil' : '⚪ Versión Estándar'} ${signed ? '✒️ Firmada' : ''}
+            </span>
+            <span style="font-size:0.8rem; color:#ffd700; font-weight:bold; letter-spacing:1px;">
+              ${'★'.repeat(level)}${'☆'.repeat(5 - level)}
+            </span>
+          </div>
+
+          <!-- stats progress meters -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="spec-progress-container">
+              <div class="spec-progress-header">
+                <span style="color:#ef4444;">❤️ PUNTOS DE VIDA (HP)</span>
+                <span style="color:#fff;">${currentHp} / 1000</span>
+              </div>
+              <div class="spec-progress-bar-bg">
+                <div class="spec-progress-bar-fill" style="width:${hpPct}%; background:linear-gradient(90deg, #ef4444, ${themeColor}); box-shadow: 0 0 10px ${themeColor};"></div>
+              </div>
+            </div>
+
+            <div class="spec-progress-container">
+              <div class="spec-progress-header">
+                <span style="color:#facc15;">⚔️ PODER DE ATAQUE (ATK)</span>
+                <span style="color:#fff;">${currentAtk} / 400</span>
+              </div>
+              <div class="spec-progress-bar-bg">
+                <div class="spec-progress-bar-fill" style="width:${atkPct}%; background:linear-gradient(90deg, #facc15, ${themeColor}); box-shadow: 0 0 10px ${themeColor};"></div>
+              </div>
+            </div>
+
+            <div class="spec-progress-container">
+              <div class="spec-progress-header">
+                <span style="color:#3b82f6;">🛡️ CAPACIDAD DE DEFENSA (DEF)</span>
+                <span style="color:#fff;">${currentDef} / 300</span>
+              </div>
+              <div class="spec-progress-bar-bg">
+                <div class="spec-progress-bar-fill" style="width:${defPct}%; background:linear-gradient(90deg, #3b82f6, ${themeColor}); box-shadow: 0 0 10px ${themeColor};"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:0.72rem; color:#cbd5e1; display:flex; justify-content:space-between; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04);">
+            <span>Copias de esta variante:</span>
+            <strong style="color:#c084fc;">${count} disponibles</strong>
+          </div>
+
+          <!-- Acciones de la variante -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="v-btn v-btn-deck ${inDeck ? 'in-deck' : ''}" style="width:100%; font-family:'Barlow Condensed',sans-serif; font-size:0.85rem;" onclick="window.toggleCardDuelDeckInZoom('${activeKeyReal}')">
+              ${inDeck ? '❌ QUITAR DEL MAZO DE COMBATE' : '➕ EQUIPAR EN MAZO DE COMBATE'}
+            </button>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <button class="v-btn v-btn-upgrade" style="font-size:0.72rem; padding:8px 4px;" ${(level >= 5 || count < 2) ? 'disabled' : ''} onclick="window.upgradeDesquicieLevelInZoom('${activeKeyReal}')">
+                📈 DESQUICIAR ★ ${level < 5 ? '<span style="font-size:0.6rem; opacity:0.8; font-weight:normal;">(2 copias)</span>' : ''}
+              </button>
+
+              <button class="v-btn v-btn-sign" style="font-size:0.72rem; padding:8px 4px;" ${(signed || count < 6) ? 'disabled' : ''} onclick="window.signCardInZoom('${activeKeyReal}')">
+                ✒️ AUTÓGRAFO ${!signed ? '<span style="font-size:0.6rem; opacity:0.8; font-weight:normal;">(6 copias)</span>' : ''}
+              </button>
+            </div>
+
+            ${(!isFoil) ? `
+              <button class="v-btn v-btn-fuse" style="width:100%; font-size:0.72rem;" ${(count < 3) ? 'disabled' : ''} onclick="window.fuseCardsInZoom('${activeKeyReal}')">
+                🧬 REALIZAR FUSIÓN HOLOGRÁFICA FOIL <span style="font-size:0.6rem; opacity:0.8; font-weight:normal; margin-left:4px;">(3 copias)</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <button class="close-zoom-btn" id="zoom-close-wrapper" style="margin-top:auto; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; width:100%; border-radius:12px; padding:10px; background:#ef4444; border:none; color:#fff; cursor:pointer;" onmouseenter="this.style.background='#f87171'" onmouseleave="this.style.background='#ef4444'">
+          ✕ CERRAR VISTA
+        </button>
+      </div>
+    `;
+
+    modal.innerHTML = `
+      <div class="zoom-split-layout">
+        ${cardHtml}
+        ${sidebarHtml}
+      </div>
+    `;
+
+    // Hook Tilt Effect
+    const container = document.getElementById("zoomed-card-container");
+    const inner = document.getElementById("zoomed-card-inner");
+    if (container && inner) {
+      container.onmousemove = function (e) {
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+
+        const rotateY = (x / (rect.width / 2)) * 18;
+        const rotateX = -(y / (rect.height / 2)) * 18;
+
+        inner.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+        inner.style.transition = "none";
+
+        const foilOverlay = container.querySelector(".card-foil-overlay");
+        if (foilOverlay) {
+          const px = 50 + (x / (rect.width / 2)) * 25;
+          const py = 50 + (y / (rect.height / 2)) * 25;
+          foilOverlay.style.setProperty("--foil-x", `${px}%`);
+          foilOverlay.style.setProperty("--foil-y", `${py}%`);
+        }
+      };
+
+      container.onmouseleave = function () {
+        inner.style.transition = "transform 0.4s ease-out";
+        inner.style.transform = "rotateY(0deg) rotateX(0deg)";
+
+        const foilOverlay = container.querySelector(".card-foil-overlay");
+        if (foilOverlay) {
+          foilOverlay.style.setProperty("--foil-x", `50%`);
+          foilOverlay.style.setProperty("--foil-y", `50%`);
+        }
+      };
     }
   };
 
-  modal.innerHTML = `
-      <style>
-        @keyframes fadeInZoom { from { opacity: 0; } to { opacity: 1; } }
-        .zoomed-card-container {
-          width: 340px;
-          height: 476px;
-          perspective: 1500px;
-          cursor: pointer;
-          transform-style: preserve-3d;
-        }
-        .zoomed-card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transform-style: preserve-3d;
-          transform: rotateY(180deg);
-          box-shadow: 0 30px 75px rgba(0,0,0,0.9);
-          border-radius: 20px;
-        }
-        .zoomed-card-front {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          border-radius: 20px;
-          overflow: hidden;
-          background: #0f0a21;
-          box-sizing: border-box;
-          transform: rotateY(180deg);
-          display: flex;
-          flex-direction: column;
-        }
-        .zoomed-card-front.rarity-design-common { border: 6px solid var(--rarity-common); }
-        .zoomed-card-front.rarity-design-rare { border: 6px solid var(--rarity-rare); box-shadow: 0 0 30px rgba(59,130,246,0.3); }
-        .zoomed-card-front.rarity-design-epic { border: 6px solid var(--rarity-epic); animation: epicGlow 4s ease infinite; }
-        .zoomed-card-front.rarity-design-legendary { border: 6px solid var(--rarity-legendary); animation: legendaryGlow 3s ease infinite; }
-        .zoomed-card-front.rarity-design-foil {
-          border: 6px solid transparent;
-          border-image: linear-gradient(45deg, #f43f5e, #eab308, #3b82f6, #f43f5e) 1;
-          box-shadow: 0 0 35px rgba(244,63,94,0.7);
-        }
-        .close-zoom-btn {
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.12);
-          color: #94a3b8;
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 1.25rem;
-          letter-spacing: 1.5px;
-          padding: 8px 36px;
-          border-radius: 50px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .close-zoom-btn:hover {
-          background: #ef4444;
-          color: #fff;
-          border-color: #ef4444;
-          box-shadow: 0 0 15px rgba(239,68,68,0.4);
-          transform: translateY(-2px);
-        }
-      </style>
-
-      <div class="zoomed-card-container" id="zoomed-card-container">
-        <div class="zoomed-card-inner" id="zoomed-card-inner">
-          <div class="zoomed-card-front lqsa-card-item ${rarityClass} ${isFoil ? 'is-foil' : ''} ${rarity.id === 'legendary' ? 'is-legendary' : ''}">
-            <div class="card-foil-overlay"></div>
-            
-            ${signed ? `
-              <div class="card-signature-wrapper">
-                <svg class="signature-scribble" viewBox="0 0 100 30">
-                  <path d="M5,15 C25,3 40,28 50,15 C65,2 75,28 95,15" fill="none" stroke="rgba(255, 215, 0, 0.55)" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-                <div class="signature-text">${card.name.split(' ')[0]}</div>
-              </div>
-            ` : ''}
-
-            <div class="card-rarity-badge" style="background:${borderCol}; font-family:'Barlow Condensed', sans-serif; font-weight:700; letter-spacing:0.8px; border-radius: 6px; z-index: 5; font-size: 0.95rem; padding: 4px 10px;">
-              ${rarityName} ${signed ? '✒️ FIRMADA' : ''}
-            </div>
-            ${getCardImageHtml(card, "48%")}
-            
-            <div class="card-info-box" style="padding: 12px 16px; height: 52%; justify-content: space-between; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(15, 10, 33, 0.96);">
-              <div style="text-align: left; overflow-y: auto; max-height: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <div class="card-name" style="font-size: 1.35rem; color: #fff; font-family:'Barlow Condensed', sans-serif; font-weight: 700; margin-bottom: 1px;">${card.name}</div>
-                  <div class="card-desquicie-stars">${'★'.repeat(level)}${'☆'.repeat(5 - level)}</div>
-                </div>
-                <div class="card-job" style="font-size: 0.8rem; color: #ffd700; margin-bottom: 4px; font-family:'Barlow Condensed', sans-serif;">💼 Ocupación: ${card.occupation}</div>
-                <div class="card-quote" style="font-size: 0.75rem; color: #94a3b8; font-style: italic; line-height: 1.25; max-height: 36px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                  "${card.quote}"
-                </div>
-
-                <!-- Panel de Estadísticas Duelo TCG -->
-                <div class="zoom-stats-box">
-                  <div class="zoom-stats-row">
-                    <span class="zoom-stats-label">Clase Duelo:</span>
-                    <span class="zoom-stats-value" style="color:#a855f7;">${card.combatType || 'Vecino'}</span>
-                  </div>
-                  <div class="zoom-stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px;">
-                    <span style="font-size:0.75rem; color:#f87171; font-weight:bold;">❤️ HP: ${currentHp}</span>
-                    <span style="font-size:0.75rem; color:#facc15; font-weight:bold;">⚔️ ATK: ${currentAtk}</span>
-                    <span style="font-size:0.75rem; color:#60a5fa; font-weight:bold;">🛡️ DEF: ${currentDef}</span>
-                  </div>
-                  <div style="font-size: 0.72rem; color: #ffd700; font-weight: bold; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px;">Habilidad Duelo TCG:</div>
-                  <div style="font-size: 0.68rem; color: #cbd5e1; line-height: 1.2; max-height: 28px; overflow: hidden;">
-                    <strong>${card.attacks && card.attacks[0] ? card.attacks[0].name : 'Sermón Vecinal'}:</strong> ${card.attacks && card.attacks[0] ? card.attacks[0].desc : 'Chapa comunitaria de derramas.'}
-                  </div>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px; margin-top: 2px;">
-                <span style="font-size: 0.68rem; color: #64748b; font-weight: bold;">T. Aparición: ${card.season}</span>
-                <span class="card-id-num" style="font-size: 0.7rem; color: #94a3b8; font-family: monospace;">Nº #${card.number}/150</span>
-              </div>
-            </div>
-            ${count > 1 ? `<div class="card-counter" style="position:absolute; top: 12px; right: 12px; font-size:1.1rem; padding: 4px 10px; border-radius: 8px; z-index: 10;">×${count}</div>` : ''}
-          </div>
-        </div>
-      </div>
-
-      <button class="close-zoom-btn" onclick="document.getElementById('zoom-card-modal').remove()">
-        ✕ Cerrar Vista
-      </button>
-    `;
-
-  document.body.appendChild(modal);
-
-  // Initialize 3D Parallax Tilt Effect for the Enlarged Card!
-  const container = document.getElementById("zoomed-card-container");
-  const inner = document.getElementById("zoomed-card-inner");
-  if (container && inner) {
-    container.onmousemove = function (e) {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-
-      const rotateY = (x / (rect.width / 2)) * 18;
-      const rotateX = -(y / (rect.height / 2)) * 18;
-
-      inner.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
-      inner.style.transition = "none";
-
-      const foilOverlay = container.querySelector(".card-foil-overlay");
-      if (foilOverlay) {
-        const px = 50 + (x / (rect.width / 2)) * 25;
-        const py = 50 + (y / (rect.height / 2)) * 25;
-        foilOverlay.style.setProperty("--foil-x", `${px}%`);
-        foilOverlay.style.setProperty("--foil-y", `${py}%`);
+  // Bridge functions for Zoom buttons
+  window.toggleCardDuelDeckInZoom = function (cardKey) {
+    const uid = localStorage.getItem('lqsa_user');
+    if (!uid) return;
+    const idx = localCardDuelDeck.indexOf(cardKey);
+    if (idx !== -1) {
+      localCardDuelDeck.splice(idx, 1);
+    } else {
+      if (localCardDuelDeck.length >= 5) {
+        if (window.showLqsaAlert) showLqsaAlert("Mazo lleno (máximo 5 cartas).", "LÍMITE ALCANZADO", "warning");
+        return;
       }
-    };
+      localCardDuelDeck.push(cardKey);
+    }
+    localStorage.setItem(`lqsa_card_duel_deck_${uid}`, JSON.stringify(localCardDuelDeck));
+    window.updateZoomCardUI(cardKey);
+    renderAlbumPages(); // Sync back to grid
+  };
 
-    container.onmouseleave = function () {
-      inner.style.transition = "transform 0.4s ease-out";
-      inner.style.transform = "rotateY(180deg) rotateX(0deg)";
+  window.upgradeDesquicieLevelInZoom = async function (cardKey) {
+    await upgradeDesquicieLevel(cardKey);
+    // Determine next expected key to keep focal highlight
+    const parts = cardKey.split("_");
+    const baseId = parts[0];
+    const isFoil = cardKey.includes("_foil");
+    const signed = cardKey.includes("_signed");
+    let currentLvl = 1;
+    const lvlMatch = cardKey.match(/_lvl(\d+)/);
+    if (lvlMatch) currentLvl = parseInt(lvlMatch[1]);
+    const nextLvl = currentLvl + 1;
+    const nextKey = getCardKey(baseId, isFoil, nextLvl, signed);
 
-      const foilOverlay = container.querySelector(".card-foil-overlay");
-      if (foilOverlay) {
-        foilOverlay.style.setProperty("--foil-x", `50%`);
-        foilOverlay.style.setProperty("--foil-y", `50%`);
-      }
-    };
-  }
+    // Refresh modal
+    window.updateZoomCardUI(nextKey);
+    renderAlbumPages(); // Sync back to grid
+  };
+
+  window.signCardInZoom = async function (cardKey) {
+    await signCard(cardKey);
+    const parts = cardKey.split("_");
+    const baseId = parts[0];
+    let currentLvl = 1;
+    const lvlMatch = cardKey.match(/_lvl(\d+)/);
+    if (lvlMatch) currentLvl = parseInt(lvlMatch[1]);
+    const signedKey = getCardKey(baseId, true, currentLvl, true);
+
+    window.updateZoomCardUI(signedKey);
+    renderAlbumPages(); // Sync back to grid
+  };
+
+  window.fuseCardsInZoom = async function (cardKey) {
+    await fuseCards(cardKey);
+    const parts = cardKey.split("_");
+    const baseId = parts[0];
+    let currentLvl = 1;
+    const lvlMatch = cardKey.match(/_lvl(\d+)/);
+    if (lvlMatch) currentLvl = parseInt(lvlMatch[1]);
+    const foilKey = getCardKey(baseId, true, currentLvl, false);
+
+    window.updateZoomCardUI(foilKey);
+    renderAlbumPages(); // Sync back to grid
+  };
+
+  // Initial draw
+  window.updateZoomCardUI(preferredKey);
 }
 
 function onPrevArrowClick() {
@@ -1201,21 +2066,38 @@ function renderAlbumPages() {
 
   // Update pagination count
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / 6));
+  const pageCounters = document.querySelectorAll("#album-page-counter");
 
-  if (counterContainer) {
+  pageCounters.forEach(counter => {
     if (filteredCards.length === 0) {
-      counterContainer.textContent = "Sin cromos";
-    } else if (isMobileView()) {
-      counterContainer.textContent = `Página ${currentAlbumPage + 1} / ${totalPages}`;
+      counter.textContent = "Sin cromos";
+    } else if (isMobileView() || counter.parentElement.id === "album-mobile-nav-bar") {
+      counter.textContent = `Página ${currentAlbumPage + 1} / ${totalPages}`;
     } else {
       const leftPageNum = currentAlbumPage + 1;
       const rightPageNum = Math.min(totalPages, currentAlbumPage + 2);
       if (leftPageNum === rightPageNum) {
-        counterContainer.textContent = `Página ${leftPageNum} / ${totalPages}`;
+        counter.textContent = `Página ${leftPageNum} / ${totalPages}`;
       } else {
-        counterContainer.textContent = `Páginas ${leftPageNum}-${rightPageNum} / ${totalPages}`;
+        counter.textContent = `Páginas ${leftPageNum}-${rightPageNum} / ${totalPages}`;
       }
     }
+  });
+
+  // Calculate unique progress
+  let ownedUniqueBasesCount = 0;
+  ALBUM_CARDS.forEach(card => {
+    const hasAny = Object.keys((userAlbumData && userAlbumData.cards) || {}).some(key => key === card.id || key.startsWith(card.id + "_"));
+    if (hasAny) {
+      ownedUniqueBasesCount++;
+    }
+  });
+  const uniqueBasesCount = ALBUM_CARDS.length;
+  const progressPct = uniqueBasesCount > 0 ? ((ownedUniqueBasesCount / uniqueBasesCount) * 100).toFixed(1) : 0;
+
+  const progMeter = document.getElementById("album-progress-meter");
+  if (progMeter) {
+    progMeter.innerHTML = `<span style="color:#ffd700;">🏆 Progreso:</span> ${ownedUniqueBasesCount} / ${uniqueBasesCount} cromos únicos (${progressPct}%)`;
   }
 
   // Enable/disable arrows
@@ -1360,10 +2242,12 @@ function openAlbumUI() {
         </div>
         
         <!-- Bottom metadata bar -->
-        <div class="album-bottom-bar" id="album-desktop-bottom-bar">
+        <div class="album-bottom-bar" id="album-desktop-bottom-bar" style="display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box;">
           <span style="font-size:0.75rem; color:#64748b; font-style:italic;">Hay versiones Holograficas mejoradas que pueden tocar en sobres (es muy dificil).</span>
-          <!-- Desk spline counts -->
-          <span id="album-page-counter">Cargando...</span>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <span id="album-progress-meter" style="font-size:0.82rem; color:#e2e8f0; font-family:'Barlow Condensed',sans-serif; font-weight:bold; letter-spacing:0.5px; background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">🏆 Progreso: --</span>
+            <span id="album-page-counter" style="font-size:0.85rem; color:#fff; font-family:'Barlow Condensed',sans-serif;">Cargando...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1431,12 +2315,12 @@ function openShopUI() {
         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;">
           <div style="position:relative; width:50px; height:26px;">
             <input type="checkbox" id="fast-open-toggle" onchange="window._fastPackOpening=this.checked; localStorage.setItem('lqsa_fast_opening', this.checked ? '1' : '0');"
-              ${localStorage.getItem('lqsa_fast_opening')==='1' ? 'checked' : ''}
+              ${localStorage.getItem('lqsa_fast_opening') === '1' ? 'checked' : ''}
               style="opacity:0; width:0; height:0; position:absolute;">
-            <span id="fast-open-slider" style="position:absolute; inset:0; background:${localStorage.getItem('lqsa_fast_opening')==='1' ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; border-radius:26px; transition:background 0.25s; border:1px solid rgba(255,255,255,0.15);"></span>
-            <span id="fast-open-knob" style="position:absolute; top:3px; left:${localStorage.getItem('lqsa_fast_opening')==='1' ? '27px' : '3px'}; width:20px; height:20px; background:#fff; border-radius:50%; transition:left 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></span>
+            <span id="fast-open-slider" style="position:absolute; inset:0; background:${localStorage.getItem('lqsa_fast_opening') === '1' ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}; border-radius:26px; transition:background 0.25s; border:1px solid rgba(255,255,255,0.15);"></span>
+            <span id="fast-open-knob" style="position:absolute; top:3px; left:${localStorage.getItem('lqsa_fast_opening') === '1' ? '27px' : '3px'}; width:20px; height:20px; background:#fff; border-radius:50%; transition:left 0.25s; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></span>
           </div>
-          <span style="color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:bold;">${localStorage.getItem('lqsa_fast_opening')==='1' ? 'Activada' : 'Desactivada'}</span>
+          <span style="color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:1rem; font-weight:bold;">${localStorage.getItem('lqsa_fast_opening') === '1' ? 'Activada' : 'Desactivada'}</span>
         </label>
       </div>
     </div>
@@ -1620,7 +2504,7 @@ function startRevealingCards() {
     // Check if any foil card to trigger special effect
     const hasFoil = openingCardsList.some(c => c.isFoil || (c.rarity && c.rarity.id === 'foil'));
     if (hasFoil) {
-      setTimeout(() => confetti({ particleCount: 120, spread: 120, origin: { y: 0.4 }, colors: ['#ff0055','#00ff88','#0099ff','#ff9900','#cc00ff'] }), 200);
+      setTimeout(() => confetti({ particleCount: 120, spread: 120, origin: { y: 0.4 }, colors: ['#ff0055', '#00ff88', '#0099ff', '#ff9900', '#cc00ff'] }), 200);
       playPackSound('foil');
     }
     setTimeout(() => displaySummaryGallery(), 350);
@@ -1717,7 +2601,7 @@ function playPackSound(type) {
         osc.stop(ctx.currentTime + delay + 0.5);
       }
     }
-  } catch(e) {
+  } catch (e) {
     // AudioContext bloqueado por política del navegador — silencio sin error
   }
 }
@@ -2133,35 +3017,33 @@ function openWorkshopUI() {
   } else if (currentWorkshopTab === 'duos') {
     contentHtml = DUO_RECIPES.map(recipe => {
       const hasDuo = !!userAlbumData.cards[recipe.id];
+      const duoCount = hasDuo ? (userAlbumData.cards[recipe.id].count || 0) : 0;
 
       const ing1Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[0]);
       const ing2Card = ALBUM_CARDS.find(c => c.id === recipe.ingredients[1]);
 
-      const hasIng1 = !!userAlbumData.cards[recipe.ingredients[0]];
-      const hasIng2 = !!userAlbumData.cards[recipe.ingredients[1]];
+      const hasIng1 = Object.keys(userAlbumData.cards).some(k => (k === recipe.ingredients[0] || k.startsWith(recipe.ingredients[0] + "_")) && userAlbumData.cards[k].count >= 1);
+      const hasIng2 = Object.keys(userAlbumData.cards).some(k => (k === recipe.ingredients[1] || k.startsWith(recipe.ingredients[1] + "_")) && userAlbumData.cards[k].count >= 1);
 
       const hasCoins = userAlbumData.coins >= recipe.coinsCost;
-      const canFuse = hasIng1 && hasIng2 && hasCoins && !hasDuo;
+      const canFuse = hasIng1 && hasIng2 && hasCoins;
 
       return `
-                <div class="workshop-card-item" style="border: 1px solid ${hasDuo ? 'rgba(240, 192, 32, 0.45)' : 'rgba(255,255,255,0.06)'}; background: ${hasDuo ? 'rgba(240, 192, 32, 0.03)' : 'rgba(255,255,255,0.02)'};">
+                <div class="workshop-card-item" style="border: 1px solid ${duoCount > 0 ? 'rgba(240, 192, 32, 0.45)' : 'rgba(255,255,255,0.06)'}; background: ${duoCount > 0 ? 'rgba(240, 192, 32, 0.03)' : 'rgba(255,255,255,0.02)'};">
                     <div style="display:flex; flex-direction:column; gap:4px; position:relative; width:60px; height:85px; min-width:60px;">
                       <img class="workshop-card-thumb" src="${ing1Card ? ing1Card.image : 'img/personajes/amador-rivas.webp'}" style="width:45px; height:60px; border-radius:5px; position:absolute; top:0; left:0; object-fit:cover;">
                       <img class="workshop-card-thumb" src="${ing2Card ? ing2Card.image : 'img/personajes/berta-escobar.webp'}" style="width:45px; height:60px; border-radius:5px; position:absolute; bottom:0; right:0; object-fit:cover; border-color:#ffd700;">
                     </div>
                     <div class="workshop-card-details">
-                        <h4 class="workshop-card-title" style="color:${hasDuo ? '#ffd700' : '#fff'};">${recipe.name}</h4>
+                        <h4 class="workshop-card-title" style="color:${duoCount > 0 ? '#ffd700' : '#fff'};">${recipe.name}</h4>
                         <p class="workshop-card-meta" style="margin-bottom: 4px;">👥 Ingredientes: 
                           <span style="color:${hasIng1 ? '#4ade80' : '#ef4444'}; font-weight:bold;">${ing1Card ? ing1Card.name.split(' ')[0] : ''} ${hasIng1 ? '✓' : '✗'}</span> y 
                           <span style="color:${hasIng2 ? '#4ade80' : '#ef4444'}; font-weight:bold;">${ing2Card ? ing2Card.name.split(' ')[0] : ''} ${hasIng2 ? '✓' : '✗'}</span>
                         </p>
                         <div style="font-size:0.75rem; color:#60a5fa; font-weight:bold;">🪙 Coste: <span style="color:${hasCoins ? '#ffd700' : '#ef4444'};">${recipe.coinsCost} Monedas</span></div>
+                        ${duoCount > 0 ? `<div style="font-size:0.7rem; color:#c084fc; font-weight:bold; margin-top:2px;">📦 Tienes ${duoCount} copias (★${userAlbumData.cards[recipe.id].level || 1})</div>` : ''}
                     </div>
-                    ${hasDuo ? `
-                        <button class="workshop-action-btn" style="background:#15803d; color:#fff;" disabled>✓ Desbloqueado</button>
-                    ` : `
-                        <button class="workshop-action-btn" ${!canFuse ? 'disabled' : ''} style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;" onclick="fuseDuo('${recipe.id}')">👥 Fusionar Dúo</button>
-                    `}
+                    <button class="workshop-action-btn" ${!canFuse ? 'disabled' : ''} style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;" onclick="fuseDuo('${recipe.id}')">👥 Fusionar Dúo</button>
                 </div>
             `;
     }).join("");
@@ -2196,27 +3078,57 @@ function switchWorkshopTab(tab) {
   openWorkshopUI();
 }
 
-async function upgradeSignature(cardId) {
+async function signCard(cardKey) {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) return;
 
-  const userCard = userAlbumData.cards[cardId];
-  if (!userCard || userCard.count < 6) return;
+  const userCard = userAlbumData.cards[cardKey];
+  if (!userCard) return;
+
+  if (userCard.signed) {
+    if (window.showLqsaAlert) showLqsaAlert("Esta versión ya está firmada.", "FIRMADA", "warning");
+    return;
+  }
+
+  if (userCard.count < 6) {
+    if (window.showLqsaAlert) showLqsaAlert("Necesitas al menos 6 copias (1 base + 5 repetidas) de esta versión para conseguir su autógrafo.", "FIRMA IMPOSIBLE", "error");
+    return;
+  }
+
+  const parts = cardKey.split("_");
+  const baseId = parts[0];
+  const isFoil = cardKey.includes("_foil");
+  let currentLvl = 1;
+  const lvlMatch = cardKey.match(/_lvl(\d+)/);
+  if (lvlMatch) currentLvl = parseInt(lvlMatch[1]);
+
+  const signedKey = getCardKey(baseId, true, currentLvl, true);
 
   const db = firebase.database();
-  const cardRef = db.ref(`users/${uid}/album/cards/${cardId}`);
+  const cardsRef = db.ref(`users/${uid}/album/cards`);
 
-  await cardRef.transaction(current => {
-    if (current && current.count >= 6) {
-      return {
-        count: current.count - 5,
-        signed: true,
-        foil: true,
-        level: current.level || 1,
-        obtainedAt: firebase.database.ServerValue.TIMESTAMP
-      };
+  await cardsRef.transaction(currentCards => {
+    if (!currentCards) return currentCards;
+
+    if (currentCards[cardKey] && currentCards[cardKey].count >= 6) {
+      currentCards[cardKey].count -= 6;
+      if (currentCards[cardKey].count <= 0) {
+        delete currentCards[cardKey];
+      }
+
+      if (!currentCards[signedKey]) {
+        currentCards[signedKey] = {
+          count: 1,
+          foil: true,
+          level: currentLvl,
+          signed: true,
+          obtainedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+      } else {
+        currentCards[signedKey].count = (currentCards[signedKey].count || 0) + 1;
+      }
     }
-    return current;
+    return currentCards;
   });
 
   if (typeof progressMission === 'function') {
@@ -2225,44 +3137,64 @@ async function upgradeSignature(cardId) {
 
   if (window.showLqsaAlert) {
     showLqsaAlert("¡El cromo ha sido firmado! Se ha grabado una firma manuscrita y ha ganado +30% de estadísticas de combate.", "¡AUTÓGRAFO COMPLETO! ✒️", "success");
-  } else {
-    alert("¡Cromo autografiado con éxito! Ha ganado +30% de atributos de duelo.");
   }
 
-  openWorkshopUI();
+  openAlbumUI();
 }
 
-async function upgradeDesquicieLevel(cardId) {
+async function upgradeSignature(cardId) {
+  return signCard(cardId);
+}
+
+async function upgradeDesquicieLevel(cardKey) {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) return;
 
-  const userCard = userAlbumData.cards[cardId];
+  const userCard = userAlbumData.cards[cardKey];
   if (!userCard) return;
 
   const currentLvl = userCard.level || 1;
-  const required = 1; // El coste en repetidos siempre es exactamente 1 cromo desquicio 1
-
-  if (userCard.count < 1 + required) {
-    if (window.showLqsaAlert) showLqsaAlert("No tienes suficientes repetidos para esta mejora.", "MEJORA IMPOSIBLE", "error");
+  if (currentLvl >= 5) {
+    if (window.showLqsaAlert) showLqsaAlert("Esta versión ya se encuentra al máximo nivel de Desquicie (5 estrellas).", "NIVEL MÁXIMO", "warning");
     return;
   }
 
-  const db = firebase.database();
-  const cardRef = db.ref(`users/${uid}/album/cards/${cardId}`);
+  if (userCard.count < 2) {
+    if (window.showLqsaAlert) showLqsaAlert("Necesitas al menos 2 copias de esta versión exacta para subir su nivel.", "MEJORA IMPOSIBLE", "error");
+    return;
+  }
 
-  await cardRef.transaction(current => {
-    const lvl = current.level || 1;
-    const reqCost = 1; // Descontar exactamente 1 repetido para subir nivel
-    if (current && current.count >= 1 + reqCost && lvl < 5) {
-      return {
-        count: current.count - reqCost,
-        level: lvl + 1,
-        signed: !!current.signed,
-        foil: !!current.foil,
-        obtainedAt: firebase.database.ServerValue.TIMESTAMP
-      };
+  const parts = cardKey.split("_");
+  const baseId = parts[0];
+  const isFoil = cardKey.includes("_foil");
+  const signed = cardKey.includes("_signed");
+  const nextKey = getCardKey(baseId, isFoil, currentLvl + 1, signed);
+
+  const db = firebase.database();
+  const cardsRef = db.ref(`users/${uid}/album/cards`);
+
+  await cardsRef.transaction(currentCards => {
+    if (!currentCards) return currentCards;
+
+    if (currentCards[cardKey] && currentCards[cardKey].count >= 2) {
+      currentCards[cardKey].count -= 2;
+      if (currentCards[cardKey].count <= 0) {
+        delete currentCards[cardKey];
+      }
+
+      if (!currentCards[nextKey]) {
+        currentCards[nextKey] = {
+          count: 1,
+          foil: isFoil,
+          level: currentLvl + 1,
+          signed: signed,
+          obtainedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+      } else {
+        currentCards[nextKey].count = (currentCards[nextKey].count || 0) + 1;
+      }
     }
-    return current;
+    return currentCards;
   });
 
   if (typeof progressMission === 'function') {
@@ -2271,11 +3203,9 @@ async function upgradeDesquicieLevel(cardId) {
 
   if (window.showLqsaAlert) {
     showLqsaAlert("¡Estrellas de Desquicie aumentadas! El vecino ha ganado +15% de estadísticas de combate.", "¡DESQUICIE AUMENTADO! 📈", "success");
-  } else {
-    alert("¡Nivel de Desquicie aumentado con éxito!");
   }
 
-  openWorkshopUI();
+  openAlbumUI();
 }
 
 async function fuseDuo(recipeId) {
@@ -2285,33 +3215,73 @@ async function fuseDuo(recipeId) {
   const recipe = DUO_RECIPES.find(r => r.id === recipeId);
   if (!recipe) return;
 
-  if (userAlbumData.coins < recipe.coinsCost) {
-    if (window.showLqsaAlert) showLqsaAlert("No tienes suficientes monedas para fusionar este dúo.", "MONEDAS INSUFICIENTES", "error");
-    return;
-  }
-
-  const hasIng1 = !!userAlbumData.cards[recipe.ingredients[0]];
-  const hasIng2 = !!userAlbumData.cards[recipe.ingredients[1]];
-  if (!hasIng1 || !hasIng2) {
-    if (window.showLqsaAlert) showLqsaAlert("Te faltan ingredientes en tu álbum para esta fusión.", "INGREDIENTES FALTANTES", "error");
-    return;
-  }
-
   const db = firebase.database();
   const userRef = db.ref(`users/${uid}`);
 
   try {
-    // Restar monedas
-    await userRef.child('coins').transaction(current => (current || 0) - recipe.coinsCost);
+    let transactionResult = await userRef.transaction(userData => {
+      if (!userData) return userData;
 
-    // Agregar carta de Dúo al catálogo del usuario
-    await userRef.child(`album/cards/${recipeId}`).set({
-      count: 1,
-      foil: true,
-      level: 1,
-      signed: false,
-      obtainedAt: firebase.database.ServerValue.TIMESTAMP
+      // 1. Validar monedas
+      const currentCoins = userData.coins || 0;
+      if (currentCoins < recipe.coinsCost) {
+        return; // Cancela la transacción por fondos insuficientes
+      }
+
+      // 2. Validar ingredientes en el álbum
+      if (!userData.album || !userData.album.cards) {
+        return; // Cancela la transacción por falta de álbum/cartas
+      }
+
+      const cards = userData.album.cards;
+
+      // Encontrar las llaves correspondientes de los ingredientes
+      const ingKey1 = Object.keys(cards).find(k => (k === recipe.ingredients[0] || k.startsWith(recipe.ingredients[0] + "_")) && cards[k].count >= 1);
+      const ingKey2 = Object.keys(cards).find(k => (k === recipe.ingredients[1] || k.startsWith(recipe.ingredients[1] + "_")) && cards[k].count >= 1);
+
+      if (!ingKey1 || !ingKey2) {
+        return; // Cancela la transacción por ingredientes faltantes
+      }
+
+      // 3. Deducir monedas
+      userData.coins = currentCoins - recipe.coinsCost;
+
+      // 4. Consumir ingredientes
+      cards[ingKey1].count--;
+      if (cards[ingKey1].count <= 0) {
+        delete cards[ingKey1];
+      }
+
+      cards[ingKey2].count--;
+      if (cards[ingKey2].count <= 0) {
+        delete cards[ingKey2];
+      }
+
+      // 5. Agregar / Incrementar Dúo Histórico
+      const duoKey = recipeId;
+      if (!cards[duoKey]) {
+        cards[duoKey] = {
+          count: 1,
+          foil: true,
+          level: 1,
+          signed: false,
+          obtainedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+      } else {
+        cards[duoKey].count = (cards[duoKey].count || 0) + 1;
+      }
+
+      return userData;
     });
+
+    if (!transactionResult.committed) {
+      if (window.showLqsaAlert) {
+        showLqsaAlert("No se pudo completar la fusión. Verifica que tienes suficientes monedas y los ingredientes necesarios.", "FUSIÓN CANCELADA", "error");
+      } else {
+        alert("Fusión cancelada. Verifica tus ingredientes y monedas.");
+      }
+      return;
+    }
 
     // Registrar progreso de misión
     await progressMission(uid, "open_pack", 1); // Contar como una desbloqueada general
@@ -2325,6 +3295,7 @@ async function fuseDuo(recipeId) {
     openWorkshopUI();
   } catch (e) {
     console.error("Error fusionando dúo:", e);
+    if (window.showLqsaAlert) showLqsaAlert("Hubo un error al intentar realizar la fusión en el servidor.", "ERROR DE RED", "error");
   }
 }
 
@@ -3113,13 +4084,13 @@ const ELEMENT_ADVANTAGES = {
 
 window.collapsedCardGroups = window.collapsedCardGroups || {};
 
-function toggleCardDuelGroup(typeKey) {
+window.toggleCardDuelGroup = function (typeKey) {
   window.collapsedCardGroups = window.collapsedCardGroups || {};
   window.collapsedCardGroups[typeKey] = !window.collapsedCardGroups[typeKey];
-  openCardDuelLobby();
+  window.openCardDuelLobby();
 }
 
-function openCardDuelLobby() {
+window.openCardDuelLobby = function () {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) {
     if (typeof openLoginModal === 'function') openLoginModal();
@@ -3140,154 +4111,43 @@ function openCardDuelLobby() {
     localCardDuelDeck = [];
   }
 
-  // Filtrar únicamente cartas obtenidas del catálogo del usuario
-  const ownedCards = ALBUM_CARDS.filter(card => {
-    const uCard = userAlbumData.cards[card.id];
-    return uCard && uCard.count >= 1;
+  // Filtrar únicamente cartas obtenidas del catálogo del usuario y expandir sus versiones compuestas
+  const ownedCards = [];
+  Object.keys(userAlbumData.cards).forEach(key => {
+    const uCard = userAlbumData.cards[key];
+    if (!uCard || uCard.count < 1) return;
+
+    const { baseId, isFoil, signed, level } = parseCardKey(key);
+    const baseCard = ALBUM_CARDS.find(c => c.id === baseId);
+    if (!baseCard) return;
+
+    const levelMultiplier = 1 + (level - 1) * 0.15;
+    const signedMultiplier = signed ? 1.3 : 1.0;
+
+    ownedCards.push({
+      ...baseCard,
+      id: key, // Clave compuesta
+      baseId: baseId,
+      level: level,
+      signed: signed,
+      isFoil: isFoil,
+      hp: Math.round((baseCard.hp || 100) * levelMultiplier * signedMultiplier),
+      atk: Math.round((baseCard.atk || 40) * levelMultiplier * signedMultiplier),
+      def: Math.round((baseCard.def || 30) * levelMultiplier * signedMultiplier),
+      name: baseCard.name + (isFoil ? " 🌈" : "") + (signed ? " ✒️" : "") + (level > 1 ? ` (★${level})` : "")
+    });
   });
 
   renderCardDuelLobbyHtml(overlay, ownedCards);
 }
 
 function renderCardDuelLobbyHtml(overlay, ownedCards) {
-  const uid = localStorage.getItem('lqsa_user');
-
-  // Agrupar cromos del inventario por tipo principal
-  const grouped = {
-    "Mayorista": [],
-    "León": [],
-    "Junta": [],
-    "Inquilino": [],
-    "Buscavidas": []
-  };
-
-  ownedCards.forEach(card => {
-    const rawType = card.combatType || "Inquilino";
-    const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
-    const groupKey = grouped[primaryType] ? primaryType : "Inquilino";
-    grouped[groupKey].push(card);
-  });
-
-  const groupedHtml = Object.keys(grouped).map(typeKey => {
-    const cards = grouped[typeKey];
-    if (cards.length === 0) return "";
-    const lType = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES && LQSA_TYPES[typeKey]) ? LQSA_TYPES[typeKey] : { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
-
-    // Check if group is minimized/collapsed
-    const isCollapsed = !!(window.collapsedCardGroups && window.collapsedCardGroups[typeKey]);
-
-    const cardsHtml = cards.map(card => {
-      const userCard = userAlbumData.cards[card.id] || { level: 1, signed: false };
-      const level = userCard.level || 1;
-      const signed = !!userCard.signed;
-      const inDeck = localCardDuelDeck.includes(card.id);
-      const rawType = card.combatType || "Inquilino";
-      const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
-      let lTypeCard = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES) ? (LQSA_TYPES[rawType] || LQSA_TYPES[primaryType] || LQSA_TYPES["Inquilino"]) : null;
-      if (!lTypeCard) {
-        lTypeCard = { icon: "🏠", color: "#4ade80", element: "Planta", label: "Inquilino (Planta)" };
-      }
-
-      return `
-            <div class="workshop-card-item" style="border:1px solid ${inDeck ? 'rgba(220,38,38,0.6)' : 'rgba(255,255,255,0.06)'}; background:${inDeck ? 'rgba(220,38,38,0.04)' : 'rgba(255,255,255,0.02)'}; padding: 10px; margin-bottom: 6px; border-radius:10px;">
-                <img class="workshop-card-thumb" src="${card.image}" style="width:45px; height:60px; object-fit:cover; border-radius:6px;" onerror="this.src='img/personajes/amador-rivas.webp'">
-                <div class="workshop-card-details" style="text-align:left;">
-                    <h4 class="workshop-card-title" style="font-size:0.95rem; margin:0 0 2px 0;">${card.name}</h4>
-                    <p class="workshop-card-meta" style="font-size:0.75rem; color:#94a3b8; margin:0 0 4px 0;">
-                        <span style="color:${lTypeCard.color}; font-weight:bold;">${lTypeCard.icon} ${lTypeCard.element || 'Planta'} - ${card.combatType || 'Inquilino'}</span> | ${'★'.repeat(level)}${'☆'.repeat(5 - level)}
-                    </p>
-                    <div style="font-size:0.72rem; color:#ffd700; font-weight:bold;">❤️ HP Base: ${card.hp} | ⚔️ ATK Base: ${card.atk}</div>
-                </div>
-                <button class="workshop-action-btn" style="background:${inDeck ? '#ef4444' : '#22c55e'}; color:#fff; font-size:0.75rem; padding: 4px 10px;" onclick="toggleCardDuelDeck('${card.id}')">
-                    ${inDeck ? '✕ Quitar' : '➕ Añadir'}
-                </button>
-            </div>
-        `;
-    }).join("");
-
-    return `
-      <div style="margin-bottom: 12px; text-align: left;">
-        <div onclick="toggleCardDuelGroup('${typeKey}')" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; font-weight: bold; font-family:'Barlow Condensed',sans-serif; color:${lType.color}; font-size:1rem; display:flex; align-items:center; gap:8px; margin-bottom: 8px; text-transform:uppercase; cursor:pointer; user-select:none; transition:all 0.2s;" onmouseenter="this.style.background='rgba(255,255,255,0.06)'" onmouseleave="this.style.background='rgba(255,255,255,0.03)'">
-          <span style="font-size: 0.8rem; margin-right: 4px; transition: transform 0.2s; display: inline-block; color: ${lType.color};">${isCollapsed ? '▶' : '▼'}</span>
-          <span>${lType.icon} ${lType.label || typeKey}</span>
-          <span style="margin-left:auto; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px; color:#cbd5e1;">${cards.length} ${cards.length === 1 ? 'cromo' : 'cromos'}</span>
-        </div>
-        <div style="${isCollapsed ? 'display: none;' : ''}">
-          ${cardsHtml}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  overlay.innerHTML = `
-      <div class="tcg-shop-container" style="max-width: 900px; width: 95vw; background: radial-gradient(circle at 50% 50%, #1a0e1c 0%, #070308 100%); border: 2px solid rgba(220, 38, 38, 0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; position: relative;">
-        <button class="auth-x" onclick="closeAllModals(); openAlbumUI();" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 25px; right: 25px; transition: all 0.2s; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.3)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.08)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.transform='scale(1)';">✕</button>
-        
-        <div style="text-align:left; margin-bottom: 16px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px;">
-          <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.4rem; letter-spacing:1px; margin:0; text-shadow:0 0 15px rgba(220, 38, 38, 0.3);">⚔️ ARENA DE DUELOS DE CARTAS TCG</h2>
-          <p style="color:#94a3b8; font-size:0.95rem; margin:4px 0 0 0;">Configura tu mazo de combate y reta a tus amigos online en un duelo por turnos estilo Pokémon.</p>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:20px; height:50vh; max-height:480px;">
-          
-          <!-- Lado Izquierdo: Selección del Mazo -->
-          <div style="display:flex; flex-direction:column; gap:10px; border-right:1px solid rgba(255,255,255,0.05); padding-right:15px; overflow-y:auto;">
-             <h3 style="color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:1.25rem; margin:0 0 4px 0; display:flex; justify-content:space-between; align-items:center;">
-                <span>🛒 Selecciona tus Vecinos</span>
-                <span style="color:#ef4444; font-size:0.95rem; font-weight:bold;">(${localCardDuelDeck.length}/5 cromos)</span>
-             </h3>
-             <div class="workshop-grid" style="grid-template-columns:1fr; gap:6px; overflow-y:visible;">
-                ${ownedCards.length === 0 ? `
-                   <p style="color:#94a3b8; font-size:0.88rem; text-align:center; padding:30px;">Aún no tienes cromos en tu colección. ¡Abre sobres en la Tienda para empezar!</p>
-                ` : groupedHtml}
-             </div>
-          </div>
-
-          <!-- Lado Derecho: Lobby / Matchmaking -->
-          <div style="display:flex; flex-direction:column; gap:16px; justify-content:center;">
-             
-             <!-- Tabla de Ventajas Elementales -->
-             <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px; font-size:0.75rem; text-align:left;">
-                <div style="color:#ef4444; font-weight:bold; margin-bottom:6px; font-size:0.85rem; font-family:'Barlow Condensed',sans-serif;">📋 CLASES Y VENTAJAS ELEMENTALES (x1.5 Daño)</div>
-                <div style="display:grid; grid-template-columns: 1fr; gap:3px; color:#cbd5e1; line-height:1.3;">
-                  <div>🦀 <strong>Mayorista</strong> vence a 🏠 Inquilino</div>
-                  <div>🦁 <strong>León</strong> vence a 💰 Buscavidas</div>
-                  <div>🏢 <strong>Junta</strong> vence a 🏠 Inquilino</div>
-                  <div>🏠 <strong>Inquilino</strong> vence a 💰 Buscavidas</div>
-                  <div>💰 <strong>Buscavidas</strong> vence a 🦁 León</div>
-                </div>
-             </div>
-
-             <!-- Acciones de Duelo -->
-             <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:12px;">
-                
-                <!-- Apuesta de Monedas -->
-                <div style="display:flex; flex-direction:column; gap:4px; text-align:left;">
-                   <label style="font-family:'Barlow Condensed',sans-serif; color:#ffd700; font-size:0.9rem; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                       <span>🪙 APUESTA DE MONEDAS:</span>
-                       <span style="font-size:0.75rem; color:#94a3b8;">Tus Monedas: ${userAlbumData.coins}</span>
-                   </label>
-                   <input type="number" id="card-duel-bet-input" value="100" min="100" max="${userAlbumData.coins}" step="10" style="background:rgba(0,0,0,0.3); border:1px solid rgba(240,192,32,0.3); border-radius:8px; color:#ffd700; padding:8px 12px; font-size:1rem; font-weight:bold; outline:none; font-family:monospace; width:100%; box-sizing:border-box;">
-                </div>
-
-                <button class="workshop-action-btn" style="background:linear-gradient(135deg, #ef4444, #991b1b); color:#fff; font-size:1.05rem; padding:10px;" onclick="createCardDuelRoom()">
-                    ⚔️ Crear Sala de Combate
-                </button>
-
-                <div style="display:flex; align-items:center; gap:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
-                   <input type="text" id="card-duel-code-input" placeholder="Código de Sala..." style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:8px 12px; font-size:0.85rem; font-family:monospace; width:60%; outline:none;">
-                   <button class="workshop-action-btn" style="background:#4b5563; color:#fff; font-size:0.85rem; padding:8px 12px; width:40%;" onclick="joinCardDuelRoom(document.getElementById('card-duel-code-input').value)">
-                       🗝️ Unirse
-                   </button>
-                </div>
-             </div>
-          </div>
-        </div>
-      </div>
-    `;
+  if (typeof window.renderCardDuelLobbyHtml === 'function') {
+    return window.renderCardDuelLobbyHtml(overlay, ownedCards);
+  }
 }
 
-function toggleCardDuelDeck(cardId) {
+window.toggleCardDuelDeck = function (cardId) {
   const uid = localStorage.getItem('lqsa_user');
   if (!uid) return;
 
@@ -3361,6 +4221,8 @@ async function createCardDuelRoom() {
   };
 
   await db.ref(`card_duels/${roomCode}`).set(initialRoomState);
+  // NUEVO: Borrar sala automáticamente de Firebase si el Host cierra la pestaña esperando rival
+  db.ref(`card_duels/${roomCode}`).onDisconnect().remove();
 
   // Asignar variables globales de sala para soporte del panel de amigos
   window._duelRoomCode = roomCode;
@@ -3454,7 +4316,7 @@ async function joinCardDuelRoom(roomCode) {
   listenToCardDuelRoom(roomCode);
 }
 
-function listenToCardDuelRoom(roomCode) {
+window.listenToCardDuelRoom = function (roomCode) {
   const db = firebase.database();
   const uid = localStorage.getItem('lqsa_user');
 
@@ -3464,13 +4326,27 @@ function listenToCardDuelRoom(roomCode) {
 
   cardDuelRoomListener = db.ref(`card_duels/${roomCode}`).on('value', snap => {
     const room = snap.val();
-    if (!room) return;
 
-    renderCardDuelRoomState(room);
+    // SOLUCIÓN: Si la sala ya no existe (es null porque le diste a Cancelar),
+    // limpiamos el juego y cerramos la pantalla automáticamente.
+    if (!room) {
+      if (cardDuelRoomListener) {
+        db.ref(`card_duels/${roomCode}`).off('value', cardDuelRoomListener);
+        cardDuelRoomListener = null;
+      }
+      window._duelRoomCode = null;
+      window._roomCode = null;
+      window._isCardDuel = false;
+      closeAllModals(); // Cierra el modal y te saca de la pantalla de espera
+      if (typeof openAlbumUI === 'function') openAlbumUI();
+      return;
+    }
+
+    window.renderCardDuelRoomState(room);
   });
 }
 
-function renderCardDuelRoomState(room) {
+window.renderCardDuelRoomState = function (room) {
   const overlay = document.getElementById("auth-modal");
   if (!overlay) return;
 
@@ -3496,46 +4372,187 @@ function renderCardDuelRoomState(room) {
           </div>
         `;
   } else if (room.status === "choosing_decks") {
+    const mePlayer = room.players[uid];
+    const myReady = mePlayer ? !!mePlayer.ready : false;
+    const myDraftDeck = mePlayer ? (mePlayer.draftDeck || []) : [];
+
+    // Retrieve owned cards to show on left
+    const ownedCards = [];
+    Object.keys(userAlbumData.cards).forEach(key => {
+      const uCard = userAlbumData.cards[key];
+      if (!uCard || uCard.count < 1) return;
+
+      const { baseId, isFoil, signed, level } = parseCardKey(key);
+      const baseCard = ALBUM_CARDS.find(c => c.id === baseId);
+      if (!baseCard) return;
+
+      ownedCards.push({
+        ...baseCard,
+        id: key, // Clave compuesta
+        baseId: baseId,
+        level: level,
+        signed: signed,
+        isFoil: isFoil,
+        name: baseCard.name + (isFoil ? " 🌈" : "") + (signed ? " ✒️" : "") + (level > 1 ? ` (★${level})` : "")
+      });
+    });
+
+    const ownedCardsHtml = ownedCards.map(card => {
+      const inDraft = myDraftDeck.includes(card.id);
+      const level = card.level || 1;
+      const rawType = card.combatType || "Inquilino";
+      const primaryType = rawType.includes(" + ") ? rawType.split(" + ")[0] : rawType;
+      let lTypeCard = (typeof LQSA_TYPES !== 'undefined' && LQSA_TYPES) ? (LQSA_TYPES[rawType] || LQSA_TYPES[primaryType] || LQSA_TYPES["Inquilino"]) : null;
+      if (!lTypeCard) lTypeCard = { icon: "🏠", color: "#4ade80", element: "Planta" };
+
+      return `
+        <div style="background:rgba(255,255,255,0.02); border:1px solid ${inDraft ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.05)'}; border-radius:10px; padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+          <div style="display:flex; align-items:center; gap:6px; text-align:left;">
+            <img src="${card.image}" style="width:25px; height:35px; object-fit:cover; border-radius:4px;" onerror="this.src='img/personajes/amador-rivas.webp'">
+            <div>
+              <div style="font-size:0.75rem; font-weight:bold; color:#fff;">${card.name}</div>
+              <div style="font-size:0.6rem; color:${lTypeCard.color};">${lTypeCard.icon} Nivel ${level}</div>
+            </div>
+          </div>
+          <button style="background:${inDraft ? '#ef4444' : '#22c55e'}; color:#fff; border:none; border-radius:4px; padding:3px 6px; font-size:0.65rem; cursor:pointer;" onclick="window.toggleOnlineDraftCard('${room.code}', '${card.id}')" ${myReady ? 'disabled' : ''}>
+            ${inDraft ? '✕' : '＋'}
+          </button>
+        </div>
+      `;
+    }).join("");
+
     const pUids = Object.keys(room.players);
-    const myReady = room.players[uid] ? !!room.players[uid].ready : false;
-
     const opponentUid = pUids.find(id => id !== uid);
-    const opponentReady = opponentUid ? !!room.players[opponentUid].ready : false;
-    const opponentName = opponentUid ? room.players[opponentUid].username : "Rival";
+    const opponent = opponentUid ? room.players[opponentUid] : null;
 
-    overlay.innerHTML = `
-          <div class="tcg-shop-container" style="max-width: 550px; width: 95vw; background:#0c091f; border: 2px solid rgba(220, 38, 38, 0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; text-align:center;">
-             <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.2rem; letter-spacing:1px; margin:0 0 6px 0;">⚔️ PREPARACIÓN DEL COMBATE</h2>
-             <p style="color:#94a3b8; font-size:0.88rem; margin:0 0 20px 0;">Ambos jugadores deben confirmar sus mazos de duelo. Los tamaños de mazo deben coincidir exactamente.</p>
-
-             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:24px;">
-                <div style="background:rgba(255,255,255,0.02); border:1px solid ${myReady ? '#4ade80' : 'rgba(255,255,255,0.06)'}; border-radius:12px; padding:15px;">
-                   <div style="font-size:0.85rem; color:#94a3b8;">Tu Estado:</div>
-                   <div style="font-size:1.15rem; font-weight:bold; color:${myReady ? '#4ade80' : '#ffd700'}; margin:6px 0;">${myReady ? '✓ LISTO' : '⚡ Eligiendo...'}</div>
-                   <div style="font-size:0.8rem; color:#60a5fa;">Mazo: ${localCardDuelDeck.length} cartas</div>
-                </div>
-
-                <div style="background:rgba(255,255,255,0.02); border:1px solid ${opponentReady ? '#4ade80' : 'rgba(255,255,255,0.06)'}; border-radius:12px; padding:15px;">
-                   <div style="font-size:0.85rem; color:#94a3b8;">${opponentName}:</div>
-                   <div style="font-size:1.15rem; font-weight:bold; color:${opponentReady ? '#4ade80' : '#ffd700'}; margin:6px 0;">${opponentReady ? '✓ LISTO' : '⚡ Eligiendo...'}</div>
-                   <div style="font-size:0.8rem; color:#60a5fa;">Mazo: ${opponentUid ? room.players[opponentUid].deckSize : '?'} cartas</div>
-                </div>
-             </div>
-
-             <div style="display:flex; gap:10px; justify-content:center;">
-                <button class="workshop-action-btn" style="background:${myReady ? '#15803d' : '#ef4444'}; color:#fff; font-size:1.05rem; padding:10px 24px;" ${myReady ? 'disabled' : ''} onclick="submitCardDuelDeck('${room.code}')">
-                    ${myReady ? '✓ Confirmado' : '🔥 ¡Estoy Listo!'}
-                </button>
-                <button class="workshop-action-btn" style="background:#4b5563; color:#fff;" onclick="abandonCardDuelRoom('${room.code}')">
-                    ✕ Salir
-                </button>
-             </div>
+    const renderPlayerDraft = (player, isMe) => {
+      if (!player) {
+        return `
+          <div style="background:rgba(0,0,0,0.25); border:1px dashed rgba(255,255,255,0.1); border-radius:12px; padding:20px; text-align:center; min-height:100px; display:flex; align-items:center; justify-content:center;">
+            <span style="color:#64748b; font-size:0.85rem;">Esperando oponente...</span>
           </div>
         `;
+      }
+      const pDraft = player.draftDeck || [];
+      const readyState = !!player.ready;
+
+      const cardsThumbs = pDraft.map(cardId => {
+        const baseId = cardId.split("_")[0];
+        const baseCard = ALBUM_CARDS.find(c => c.id === baseId);
+        if (!baseCard) return "";
+        return `<img src="${baseCard.image}" style="width:36px; height:50px; object-fit:cover; border-radius:3px; border:1px solid #c084fc; box-shadow:0 0 8px rgba(168,85,247,0.2);" onerror="this.src='img/personajes/amador-rivas.webp'">`;
+      }).join("");
+
+      return `
+        <div style="background:rgba(0,0,0,0.3); border:1px solid ${readyState ? '#4ade80' : 'rgba(255,255,255,0.06)'}; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:0.85rem; font-weight:bold; color:${isMe ? '#4ade80' : '#cbd5e1'}; display:flex; justify-content:space-between; align-items:center;">
+            <span>${isMe ? '👤 Tú (Tu Selección)' : player.username}</span>
+            <span style="font-size:0.75rem; color:${readyState ? '#4ade80' : '#ffd700'}; font-weight:bold;">${readyState ? '✅ LISTO' : `SELECCIÓN (${pDraft.length}/5)`}</span>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; min-height:50px; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px;">
+            ${pDraft.length === 0 ? '<span style="font-size:0.7rem; color:#64748b;">Ninguna seleccionada</span>' : cardsThumbs}
+          </div>
+        </div>
+      `;
+    };
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container" style="max-width: 950px; width: 96vw; background:#0c091f; border: 2px solid rgba(220,38,38,0.4); border-radius: 24px; padding: 24px; box-sizing: border-box; position: relative;">
+        <button class="auth-x" onclick="abandonCardDuelRoom('${room.code}')" style="border: 2px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; font-weight: bold; cursor: pointer; position: absolute; top: 15px; right: 15px; display: flex; align-items: center; justify-content: center;">✕</button>
+        
+        <h2 style="font-family:'Bebas Neue',sans-serif; color:#ef4444; font-size:2.2rem; letter-spacing:1px; margin:0 0 2px 0; text-align:left;">⚔️ SELECCIÓN DE CARTAS EN DIRECTO</h2>
+        <p style="color:#94a3b8; font-size:0.85rem; margin:0 0 15px 0; text-align:left;">Elegid vuestras 5 mejores cartas de combate simultáneamente en tiempo real.</p>
+
+        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:20px; height:50vh; max-height:430px;">
+          
+          <!-- Izquierda: Tus Cartas -->
+          <div style="display:flex; flex-direction:column; gap:8px; border-right:1px solid rgba(255,255,255,0.05); padding-right:15px; overflow-y:auto;">
+            <h3 style="color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; margin:0 0 2px 0; text-align:left;">🎴 Colección de Cromos</h3>
+            <div style="display:grid; grid-template-columns:1fr; gap:5px;">
+              ${ownedCardsHtml}
+            </div>
+          </div>
+
+          <!-- Derecha: Estado de Selección -->
+          <div style="display:flex; flex-direction:column; gap:12px; justify-content:space-between; text-align:left; overflow-y:auto; padding-right:4px;">
+            
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${renderPlayerDraft(mePlayer, true)}
+              ${renderPlayerDraft(opponent, false)}
+            </div>
+
+            <!-- Botón de Confirmación -->
+            <button class="workshop-action-btn" style="background:${myReady ? '#15803d' : 'linear-gradient(135deg, #a855f7, #6366f1)'}; color:#fff; font-size:1rem; padding:10px; width:100%;" ${myReady || myDraftDeck.length !== 5 ? 'disabled' : ''} onclick="window.submitCardDuelLiveDraft('${room.code}')">
+              ${myReady ? '✅ Mazo Confirmado - Esperando al Rival' : '⚡ ¡Confirmar Mazo de Combate!'}
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+    `;
   } else if (room.status === "fighting") {
     renderCardBattleScreen(room);
   } else if (room.status === "finished") {
     renderCardBattleResultScreen(room);
+  }
+}
+window.renderTeamDuelRoomState = function (room) {
+  const overlay = document.getElementById("auth-modal");
+  if (!overlay) return;
+  const uid = localStorage.getItem('lqsa_user');
+
+  if (room.status === "choosing_decks") {
+    const mePlayer = room.players[uid];
+    const myReady = mePlayer ? !!mePlayer.ready : false;
+    const myDraftDeck = mePlayer ? (mePlayer.draftDeck || []) : [];
+
+    const ownedCards = [];
+    Object.keys(userAlbumData.cards).forEach(key => {
+      const uCard = userAlbumData.cards[key];
+      if (!uCard || uCard.count < 1) return;
+      const { baseId, isFoil, signed, level } = parseCardKey(key);
+      const baseCard = ALBUM_CARDS.find(c => c.id === baseId);
+      if (baseCard) ownedCards.push({ ...baseCard, id: key, level });
+    });
+
+    const ownedCardsHtml = ownedCards.map(card => {
+      const inDraft = myDraftDeck.includes(card.id);
+      return `
+        <div style="background:rgba(255,255,255,0.02); border:1px solid ${inDraft ? '#a855f7' : 'rgba(255,255,255,0.05)'}; border-radius:8px; padding:6px; display:flex; align-items:center; justify-content:space-between; font-size:0.75rem;">
+          <span>${card.name} (★${card.level || 1})</span>
+          <button style="background:${inDraft ? '#ef4444' : '#22c55e'}; color:#fff; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;" onclick="window.toggleTeamDraftCard('${room.code}', '${card.id}')" ${myReady ? 'disabled' : ''}>
+            ${inDraft ? '✕' : '＋'}
+          </button>
+        </div>
+      `;
+    }).join("");
+
+    let teamAHtml = ""; let teamBHtml = "";
+    Object.values(room.players).forEach((p, index) => {
+      const isMe = p.uid === uid;
+      const readyBadge = p.ready ? `<span style="color:#4ade80">✅ Listo</span>` : `<span style="color:#facc15">⏳ Eligiendo (${(p.draftDeck || []).length}/5)</span>`;
+      const block = `<div style="padding:6px; background:rgba(255,255,255,0.03); border-radius:6px; margin-bottom:4px; font-size:0.8rem;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span style="color:${isMe ? '#4ade80' : '#fff'}">${p.username}</span>${readyBadge}</div></div>`;
+      if (index % 2 === 0) teamAHtml += block; else teamBHtml += block;
+    });
+
+    overlay.innerHTML = `
+      <div class="tcg-shop-container" style="max-width: 900px; width: 96vw; background:#0c091f; border: 2px solid #a855f7; border-radius: 24px; padding: 24px; box-sizing: border-box;">
+        <h2 style="font-family:'Bebas Neue',sans-serif; color:#a855f7; font-size:2rem; margin:0 0 4px 0;">👥 CAMERINO 2VS2: ESTRATEGIA EN EQUIPO</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:20px; height:420px;">
+          <div style="overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:8px; border-right:1px solid rgba(255,255,255,0.05);">${ownedCardsHtml}</div>
+          <div style="display:flex; flex-direction:column; justify-content:space-between; text-align:left;">
+            <div>
+              <h4 style="color:#60a5fa; margin:0 0 6px 0; font-family:'Bebas Neue';">🔵 EQUIPO CONTRASTE</h4>${teamAHtml}
+              <h4 style="color:#ef4444; margin:12px 0 6px 0; font-family:'Bebas Neue';">🔴 EQUIPO DERRAMA</h4>${teamBHtml}
+            </div>
+            <button class="workshop-action-btn" style="background:${myReady ? '#15803d' : 'linear-gradient(135deg, #a855f7, #6366f1)'}; color:#fff; width:100%; padding:12px;" ${myReady || myDraftDeck.length !== 5 ? 'disabled' : ''}>
+              ${myReady ? '✓ Mazo Listo' : '⚡ Confirmar Mazo Estratégico'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -3545,15 +4562,22 @@ async function submitCardDuelDeck(roomCode) {
 
   const db = firebase.database();
 
-  // Mapear y escalar mazo de combate TCG
+  // Mapear y escalar mazo de combate TCG (soporta claves compuestas)
   const mappedDeck = localCardDuelDeck.map(cardId => {
-    const card = ALBUM_CARDS.find(c => c.id === cardId);
-    const userCard = userAlbumData.cards[cardId] || { level: 1, signed: false };
+    const baseId = cardId.split("_")[0];
+    const isFoil = cardId.includes("_foil");
+    const signed = cardId.includes("_signed");
+    let level = 1;
+    const lvlMatch = cardId.match(/_lvl(\d+)/);
+    if (lvlMatch) level = parseInt(lvlMatch[1]);
 
-    const level = userCard.level || 1;
-    const signed = !!userCard.signed;
-    const levelMultiplier = 1 + (level - 1) * 0.15;
-    const signedMultiplier = signed ? 1.3 : 1.0;
+    const card = ALBUM_CARDS.find(c => c.id === baseId) || ALBUM_CARDS[0];
+    const userCard = userAlbumData.cards[cardId] || { level: level, signed: signed };
+
+    const lvl = userCard.level || level || 1;
+    const sig = !!userCard.signed || signed;
+    const levelMultiplier = 1 + (lvl - 1) * 0.15;
+    const signedMultiplier = sig ? 1.3 : 1.0;
 
     const maxHp = Math.round((card.hp || 100) * levelMultiplier * signedMultiplier);
     const atk = Math.round((card.atk || 40) * levelMultiplier * signedMultiplier);
@@ -3567,14 +4591,14 @@ async function submitCardDuelDeck(roomCode) {
 
     return {
       id: cardId,
-      name: card.name,
+      name: card.name + (isFoil ? " 🌈" : "") + (sig ? " ✒️" : "") + (lvl > 1 ? ` (★${lvl})` : ""),
       image: card.image,
       maxHp: maxHp,
       hp: maxHp,
       atk: atk,
       def: def,
-      level: level,
-      signed: signed,
+      level: lvl,
+      signed: sig,
       combatType: card.combatType || "Inquilino",
       attacks: scaledAttacks
     };
@@ -3653,6 +4677,111 @@ async function abandonCardDuelRoom(roomCode) {
   openCardDuelLobby();
 }
 
+window.toggleOnlineDraftCard = async function (roomCode, cardId) {
+  const uid = localStorage.getItem('lqsa_user');
+  if (!uid) return;
+  const db = firebase.database();
+  const roomRef = db.ref(`card_duels/${roomCode}`);
+  const snap = await roomRef.child(`players/${uid}/draftDeck`).once('value');
+  let currentDraft = snap.val() || [];
+
+  const idx = currentDraft.indexOf(cardId);
+  if (idx !== -1) {
+    currentDraft.splice(idx, 1);
+  } else {
+    if (currentDraft.length >= 5) {
+      if (window.showLqsaAlert) showLqsaAlert("¡Mazo lleno! Máximo 5 cartas.", "LÍMITE ALCANZADO", "warning");
+      else alert("Mazo lleno (máximo 5 cartas).");
+      return;
+    }
+    currentDraft.push(cardId);
+  }
+  await roomRef.child(`players/${uid}/draftDeck`).set(currentDraft);
+};
+
+window.submitCardDuelLiveDraft = async function (roomCode) {
+  const uid = localStorage.getItem('lqsa_user');
+  if (!uid) return;
+  const db = firebase.database();
+  const roomRef = db.ref(`card_duels/${roomCode}`);
+  const snap = await roomRef.once('value');
+  const room = snap.val();
+
+  const myDraftDeck = room.players[uid] ? (room.players[uid].draftDeck || []) : [];
+  if (myDraftDeck.length !== 5) {
+    alert("Debes seleccionar exactamente 5 cartas.");
+    return;
+  }
+
+  const mappedDeck = myDraftDeck.map(cardId => {
+    const baseId = cardId.split("_")[0];
+    const isFoil = cardId.includes("_foil");
+    const signed = cardId.includes("_signed");
+    let level = 1;
+    const lvlMatch = cardId.match(/_lvl(\d+)/);
+    if (lvlMatch) level = parseInt(lvlMatch[1]);
+
+    const card = ALBUM_CARDS.find(c => c.id === baseId) || ALBUM_CARDS[0];
+    const userCard = userAlbumData.cards[cardId] || { level: level, signed: signed };
+
+    const lvl = userCard.level || level || 1;
+    const sig = !!userCard.signed || signed;
+    const levelMultiplier = 1 + (lvl - 1) * 0.15;
+    const signedMultiplier = sig ? 1.3 : 1.0;
+
+    const maxHp = Math.round((card.hp || 100) * levelMultiplier * signedMultiplier);
+    const atk = Math.round((card.atk || 40) * levelMultiplier * signedMultiplier);
+    const def = Math.round((card.def || 30) * levelMultiplier * signedMultiplier);
+
+    const scaledAttacks = (card.attacks || []).map(atkObj => ({
+      name: atkObj.name,
+      desc: atkObj.desc,
+      power: Math.round(atkObj.power * levelMultiplier * signedMultiplier)
+    }));
+
+    return {
+      id: cardId,
+      name: card.name + (isFoil ? " 🌈" : "") + (sig ? " ✒️" : "") + (lvl > 1 ? ` (★${lvl})` : ""),
+      image: card.image,
+      maxHp: maxHp,
+      hp: maxHp,
+      atk: atk,
+      def: def,
+      level: lvl,
+      signed: sig,
+      combatType: card.combatType || "Inquilino",
+      attacks: scaledAttacks
+    };
+  });
+
+  await roomRef.child(`players/${uid}/deck`).set(mappedDeck);
+  await roomRef.child(`players/${uid}/ready`).set(true);
+
+  // Verificar si ambos están listos
+  const updatedSnap = await roomRef.once('value');
+  const updatedRoom = updatedSnap.val();
+  const pUids = Object.keys(updatedRoom.players || {});
+
+  if (pUids.length === 2) {
+    const p1 = pUids[0];
+    const p2 = pUids[1];
+
+    if (updatedRoom.players[p1].ready && updatedRoom.players[p2].ready) {
+      // Iniciar combate
+      const battleState = {
+        status: "fighting",
+        turn: updatedRoom.creator,
+        activeCards: {
+          [p1]: 0,
+          [p2]: 0
+        },
+        logs: ["¡El combate en directo ha comenzado! Turno de " + updatedRoom.players[updatedRoom.creator].username]
+      };
+      await roomRef.update(battleState);
+    }
+  }
+};
+
 async function surrenderCardDuel(roomCode) {
   if (!confirm("¿Seguro que quieres rendirte y perder la apuesta de monedas?")) return;
 
@@ -3716,6 +4845,13 @@ function renderCardBattleScreen(room) {
   const isMyTurn = room.turn === myUid;
   const logList = room.logs || [];
   const recentLogs = logList.slice(-4).reverse();
+
+  // Guardar y comparar estados anteriores de HP para animaciones reactivas
+  const lastState = window._lastHpState || {};
+  const prevMyHp = (lastState.roomCode === room.code && lastState.myHp !== undefined) ? lastState.myHp : myActiveCard.hp;
+  const prevOppHp = (lastState.roomCode === room.code && lastState.oppHp !== undefined) ? lastState.oppHp : oppActiveCard.hp;
+
+  window._lastHpState = { roomCode: room.code, myHp: myActiveCard.hp, oppHp: oppActiveCard.hp };
 
   // Renderizar Elementos
   const myRawType = myActiveCard.combatType || "Inquilino";
@@ -3795,7 +4931,7 @@ function renderCardBattleScreen(room) {
               </div>
 
               <!-- Retrato Enemigo -->
-              <div style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${oppType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+              <div class="opp-active-card-container" style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${oppType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5); position:relative;">
                  <img src="${oppActiveCard.image}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src='img/personajes/amador-rivas.webp'">
               </div>
            </div>
@@ -3804,7 +4940,7 @@ function renderCardBattleScreen(room) {
            <div style="display:flex; align-items:center; justify-content:flex-start; gap:20px; padding: 10px 30px; border-top: 1px solid rgba(255,255,255,0.02);">
               
               <!-- Retrato Jugador -->
-              <div style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${myType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+              <div class="my-active-card-container" style="width: 75px; height: 105px; border-radius:8px; border:2px solid ${myType.color}; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.5); position:relative;">
                  <img src="${myActiveCard.image}" style="width:100%; height:100%; object-fit:cover; object-position:top;" onerror="this.src='img/personajes/amador-rivas.webp'">
               </div>
 
@@ -3863,6 +4999,25 @@ function renderCardBattleScreen(room) {
         </div>
       </div>
     `;
+
+  // Disparar animaciones de combate si la vida de alguna de las cartas cambió
+  setTimeout(() => {
+    if (prevOppHp > oppActiveCard.hp) {
+      const damage = prevOppHp - oppActiveCard.hp;
+      const attackerEl = document.querySelector(".my-active-card-container");
+      const defenderEl = document.querySelector(".opp-active-card-container");
+      if (attackerEl && defenderEl && typeof window.playTcgCombatAnimationGeneric === 'function') {
+        window.playTcgCombatAnimationGeneric(attackerEl, defenderEl, myPrimary, damage);
+      }
+    } else if (prevMyHp > myActiveCard.hp) {
+      const damage = prevMyHp - myActiveCard.hp;
+      const attackerEl = document.querySelector(".opp-active-card-container");
+      const defenderEl = document.querySelector(".my-active-card-container");
+      if (attackerEl && defenderEl && typeof window.playTcgCombatAnimationGeneric === 'function') {
+        window.playTcgCombatAnimationGeneric(attackerEl, defenderEl, oppPrimary, damage);
+      }
+    }
+  }, 100);
 
   // Si la carta activa actual está muerta y es mi turno, forzar cambio de carta bloqueando ataques
   if (myActiveCard.hp <= 0) {
@@ -4064,3 +5219,130 @@ function renderCardBattleResultScreen(room) {
     cardDuelRoomListener = null;
   }
 }
+window.playTcgCombatAnimationGeneric = function (attackerEl, defenderEl, combatType, damage) {
+  if (!attackerEl || !defenderEl) return;
+
+  // --- Configuración elemental ---
+  const elementConfig = {
+    "Fuego": { emoji: "🔥", color: "#ef4444", glow: "rgba(239,68,68,0.9)", hitWord: "¡FUEGO!" },
+    "Mayorista": { emoji: "🔥", color: "#ef4444", glow: "rgba(239,68,68,0.9)", hitWord: "¡CHAVAL!" },
+    "Eléctrico": { emoji: "⚡", color: "#facc15", glow: "rgba(250,204,21,0.9)", hitWord: "¡ZAP!" },
+    "León": { emoji: "⚡", color: "#facc15", glow: "rgba(250,204,21,0.9)", hitWord: "¡GRRRR!" },
+    "Psíquico": { emoji: "🔮", color: "#a855f7", glow: "rgba(168,85,247,0.9)", hitWord: "¡BOOM!" },
+    "Junta": { emoji: "🔮", color: "#a855f7", glow: "rgba(168,85,247,0.9)", hitWord: "¡ESTATUTOS!" },
+    "Planta": { emoji: "🍃", color: "#22c55e", glow: "rgba(34,197,94,0.9)", hitWord: "¡ZAS!" },
+    "Inquilino": { emoji: "🏠", color: "#22c55e", glow: "rgba(34,197,94,0.9)", hitWord: "¡VECINO!" },
+    "Agua": { emoji: "💧", color: "#3b82f6", glow: "rgba(59,130,246,0.9)", hitWord: "¡SPLASH!" },
+    "Buscavidas": { emoji: "💧", color: "#3b82f6", glow: "rgba(59,130,246,0.9)", hitWord: "¡AU!" },
+  };
+  const eType = combatType || "Inquilino";
+  const cfg = elementConfig[eType] || elementConfig["Inquilino"];
+
+  // Inyectar keyframes una sola vez
+  if (!document.getElementById("pokemon-battle-keyframes")) {
+    const kf = document.createElement("style");
+    kf.id = "pokemon-battle-keyframes";
+    kf.textContent = `
+      @keyframes pkFlashWhite { 0%{opacity:0} 15%{opacity:0.85} 50%{opacity:0.6} 100%{opacity:0} }
+      @keyframes pkDamageText { 0%{transform:translate(-50%,-50%) scale(0.2);opacity:0} 12%{transform:translate(-50%,-65%) scale(1.5);opacity:1} 40%{transform:translate(-50%,-75%) scale(1.1);opacity:1} 80%{transform:translate(-50%,-110%) scale(0.95);opacity:0.9} 100%{transform:translate(-50%,-140%) scale(0.8);opacity:0} }
+      @keyframes pkHitWord  { 0%{transform:translate(-50%,-50%) scale(0.3) rotate(-12deg);opacity:0} 20%{transform:translate(-50%,-50%) scale(1.4) rotate(4deg);opacity:1} 60%{transform:translate(-50%,-50%) scale(1.05) rotate(-2deg);opacity:1} 100%{transform:translate(-50%,-70%) scale(0.8);opacity:0} }
+      @keyframes pkStar     { 0%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1} 100%{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(0) rotate(360deg);opacity:0} }
+      @keyframes pkScreenFlash { 0%{opacity:0} 10%{opacity:0.35} 100%{opacity:0} }
+      @keyframes pkDefFlash { 0%,100%{filter:none} 25%,75%{filter:brightness(9) saturate(0)} 50%{filter:brightness(1) saturate(1)} }
+    `;
+    document.head.appendChild(kf);
+  }
+
+  const isOpponent = attackerEl.classList.contains("opp-active-card-container") ||
+    (attackerEl.parentElement && attackerEl.parentElement.classList.contains('opp-active-card-container'));
+  const chargeDir = isOpponent ? 55 : -55;
+
+  // === FASE 1: CARGA DEL ATACANTE (0ms) ===
+  attackerEl.style.transition = "transform 0.12s cubic-bezier(0.4,0,1,1)";
+  attackerEl.style.zIndex = "50";
+  attackerEl.style.transform = `translateY(${chargeDir}px) scale(1.12)`;
+
+  // === FASE 2: IMPACTO (120ms) ===
+  setTimeout(() => {
+    // Rebote atrás del atacante con overshoot
+    attackerEl.style.transition = "transform 0.18s cubic-bezier(0.2,1.6,0.4,1)";
+    attackerEl.style.transform = "translateY(0) scale(1)";
+
+    // Flash blanco del defensor (estilo Pokémon DS)
+    defenderEl.style.animation = "pkDefFlash 0.45s steps(1,end)";
+    setTimeout(() => { defenderEl.style.animation = ""; }, 500);
+
+    // Flash de pantalla completa (overlay)
+    const screenFlash = document.createElement("div");
+    screenFlash.style.cssText = `position:fixed;inset:0;background:#fff;z-index:99999;pointer-events:none;animation:pkScreenFlash 0.4s ease-out forwards;`;
+    document.body.appendChild(screenFlash);
+    setTimeout(() => screenFlash.remove(), 420);
+
+    // === FASE 3: SACUDIDA (150ms después del impacto) ===
+    setTimeout(() => {
+      const shakeParent = defenderEl.parentElement || defenderEl;
+      let t = 0;
+      const shakeInterval = setInterval(() => {
+        const x = t < 6 ? (Math.random() - 0.5) * 18 : 0;
+        const y = t < 6 ? (Math.random() - 0.5) * 18 : 0;
+        shakeParent.style.transform = t < 6 ? `translate(${x}px, ${y}px)` : "";
+        if (++t >= 8) { clearInterval(shakeInterval); shakeParent.style.transform = ""; }
+      }, 32);
+
+      // === ESTRELLAS DE IMPACTO radiales ===
+      const starSymbols = ["★", "✦", "✸", "✺", cfg.emoji];
+      for (let i = 0; i < 10; i++) {
+        const star = document.createElement("div");
+        const angle = (i / 10) * 360;
+        const dist = 55 + Math.random() * 35;
+        const tx = Math.cos(angle * Math.PI / 180) * dist;
+        const ty = Math.sin(angle * Math.PI / 180) * dist;
+        star.textContent = starSymbols[i % starSymbols.length];
+        star.style.cssText = `
+          position:absolute; top:50%; left:50%;
+          font-size:${18 + Math.random() * 14}px;
+          color:${cfg.color};
+          text-shadow:0 0 8px ${cfg.glow};
+          pointer-events:none; z-index:1002;
+          --tx:${tx}px; --ty:${ty}px;
+          animation:pkStar 0.55s cubic-bezier(0.2,0.8,0.3,1) ${i * 18}ms forwards;
+        `;
+        defenderEl.appendChild(star);
+        setTimeout(() => star.remove(), 620);
+      }
+
+      // === PALABRA DE IMPACTO estilo Pokémon ===
+      const hitDiv = document.createElement("div");
+      hitDiv.textContent = cfg.hitWord;
+      hitDiv.style.cssText = `
+        position:absolute; top:45%; left:50%;
+        font-family:'Bebas Neue',sans-serif;
+        font-size:1.6rem; font-weight:900;
+        color:#fff;
+        text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 12px ${cfg.glow};
+        white-space:nowrap; pointer-events:none; z-index:1003;
+        animation:pkHitWord 0.65s cubic-bezier(0.2,1.2,0.4,1) forwards;
+      `;
+      defenderEl.appendChild(hitDiv);
+      setTimeout(() => hitDiv.remove(), 680);
+
+      // === DAÑO FLOTANTE estilo Pokémon ===
+      if (damage !== undefined && damage > 0) {
+        const dmgDiv = document.createElement("div");
+        dmgDiv.textContent = `-${damage}`;
+        const isBig = damage >= 80;
+        dmgDiv.style.cssText = `
+          position:absolute; top:30%; left:50%;
+          font-family:'Bebas Neue',sans-serif;
+          font-size:${isBig ? '3.2rem' : '2.2rem'}; font-weight:900;
+          color:${isBig ? '#fbbf24' : '#fff'};
+          text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000, 0 0 20px ${isBig ? 'rgba(251,191,36,0.9)' : cfg.glow};
+          pointer-events:none; z-index:1004;
+          animation:pkDamageText 1.0s cubic-bezier(0.25,1,0.5,1) 80ms forwards;
+        `;
+        defenderEl.appendChild(dmgDiv);
+        setTimeout(() => dmgDiv.remove(), 1100);
+      }
+    }, 150);
+  }, 120);
+};

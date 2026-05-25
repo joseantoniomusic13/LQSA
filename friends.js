@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    LQSACatena — Sistema de Amigos e Invitaciones
    Firebase Realtime Database:
      /users/{uid}/friends/{friendUid}  → { username, avatar, addedAt }
